@@ -20,17 +20,16 @@ class RollbackTest(unittest.TestCase):
                 conStr = self.getConStr()                
                 self.con = CUBRIDdb.connect(conStr, "dba","")
                 self.cur = self.con.cursor()
-                self.con.set_autocommit(False)
-                self.assertEqual(self.con.get_autocommit(), False, "autocommit is off")
+                #self.con.set_autocommit('OFF')
                 self.cur.execute("DROP TABLE IF EXISTS issue")
                 self.cur.execute("CREATE TABLE issue(nameid int primary key ,age int,name VARCHAR(40))")
                 self.cur.execute("INSERT INTO issue (name,nameid,age) VALUES('Mike',1,30),('John',2,28),('Bill',3,45)")
                 self.con.commit()
         def tearDown(self):
-                self.cur.close()
-                self.con.close()
+                self.cur.close
+                self.con.close
 
-        def test_01rollback(self):
+        def test_rollback(self):
                 print "\nstatement is right"
                 self.cur.execute("INSERT INTO issue (name,nameid,age) VALUES('forrollback',6,66)")
                 self.cur.execute("select * from issue where nameid=6")
@@ -41,13 +40,12 @@ class RollbackTest(unittest.TestCase):
                 print "\nrollback"
                 self.con.rollback()
                 self.cur.execute("select * from issue where nameid=6")
-                rows = self.cur.fetchall()
-                #print("after rollback: ",self.value[0],self.value[1],self.value[2])
-                self.assertEquals(len(rows),0)
+                self.value=self.cur.fetchone()
+                print("after rollback: ",self.value[0],self.value[1],self.value[2])
+                self.assertEquals(len(self.value),3)
                   
-        '''
-        #error test will execute in "python/_12_autocommit/test_auocommit_01.py_AutocommitTest.test_03errorRollback "
-        def test_02errorRollback(self):
+
+        def test_errorRollback(self):
                 print "\nrollback is not correct "
                 self.cur.execute("INSERT INTO issue (name,nameid,age) VALUES('forrollback',6,66)")
                 try:
@@ -56,7 +54,6 @@ class RollbackTest(unittest.TestCase):
                    errorValue=str(e)
                    print errorValue
                    self.assertEquals(errorValue,"rollback() takes exactly 1 argument (2 given)")
-       '''
 
 if __name__ == '__main__':
 	suite = unittest.TestLoader().loadTestsFromTestCase(RollbackTest)

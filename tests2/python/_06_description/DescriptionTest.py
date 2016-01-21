@@ -62,7 +62,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from numeric_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description		
-		dataCheck = (('c_int', 8, 0, 0, 10, 0, 0), ('c_short', 9, 0, 0, 5, 0, 0), ('c_numeric', 7, 0, 0, 15, 0, 0), ('c_float', 11, 0, 0, 7, 0, 0), ('c_double', 12, 0, 0, 15, 0, 0), ('c_monetary', 10, 0, 0, 15, 0, 0))
+		dataCheck = (('c_int', 8, 0, 0, 0, 0, 0), ('c_short', 9, 0, 0, 0, 0, 0), ('c_numeric', 7, 0, 0, 15, 0, 0), ('c_float', 11, 0, 0, 0, 0, 0), ('c_double', 12, 0, 0, 0, 0, 0), ('c_monetary', 10, 0, 0, 0, 0, 0))
 		self.assertEquals(dataCheck, dataDesc)
 
         def test_desc_datetime(self):
@@ -70,7 +70,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from datetime_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description
-                dataCheck = (('c_date', 13, 0, 0, 10, 0, 0), ('c_time', 14, 0, 0, 8, 0, 0), ('c_datetime', 22, 0, 0, 23, 3, 0), ('c_timestamp', 15, 0, 0, 19, 0, 0))
+                dataCheck = (('c_date', 13, 0, 0, 0, 0, 0), ('c_time', 14, 0, 0, 0, 0, 0), ('c_datetime', 22, 0, 0, 0, 0, 0), ('c_timestamp', 15, 0, 0, 0, 0, 0))
 		self.assertEquals(dataCheck, dataDesc)
 
         def test_desc_bit(self):

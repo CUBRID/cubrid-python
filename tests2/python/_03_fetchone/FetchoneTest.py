@@ -52,11 +52,11 @@ class FetchoneTest(unittest.TestCase):
 		for i in range(dataNum):
 	                sqlInsert = "insert into tdb values(NULL,21,'myName')"
 	                self.cur.execute(sqlInsert)
-                sqlSelect = "select * from tdb order by id asc"
+                sqlSelect = "select * from tdb"
                 self.cur.execute(sqlSelect)
                 for i in range(dataNum):
 			data = self.cur.fetchone()
-# 		        self.assertEquals(i+1, locale.atoi(data[0]))
+#		        self.assertEquals(i+1, locale.atoi(data[0]))
 		        self.assertEquals(i+1, data[0])
 
         def test_fetchone_norecord(self):

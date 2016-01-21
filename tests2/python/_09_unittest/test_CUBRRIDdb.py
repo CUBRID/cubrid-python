@@ -79,7 +79,6 @@ class DBAPI20Test(unittest.TestCase):
                 issubclass(self.driver.DatabaseError,self.driver.Error)
                 )
 
-
     def test_commit(self):
         con = self._connect()
         try:

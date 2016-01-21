@@ -35,21 +35,21 @@ class ExecuteViewTest(unittest.TestCase):
                 self.cursor.execute(viewSql2)
 
                 #table a_tbl and view b_view
-                nsql2='drop table if exists py_a_tbl'
+                nsql2='drop table if exists a_tbl'
                 self.cursor.execute(nsql2)
-                nsql3='CREATE TABLE py_a_tbl(id INT NOT NULL,phone VARCHAR(10))'
+                nsql3='CREATE TABLE a_tbl(id INT NOT NULL,phone VARCHAR(10))'
                 self.cursor.execute(nsql3)
-                insertSql="INSERT INTO py_a_tbl VALUES(1,'111-1111'), (2,'222-2222'), (3, '333-3333'), (4, NULL), (5, NULL)"
+                insertSql="INSERT INTO a_tbl VALUES(1,'111-1111'), (2,'222-2222'), (3, '333-3333'), (4, NULL), (5, NULL)"
                 valueInsert=self.cursor.execute(insertSql)
                 self.assertEquals(valueInsert,5)
-                viewSql2='CREATE VIEW b_view AS SELECT * FROM py_a_tbl WHERE phone IS NOT NULL WITH CHECK OPTION'
+                viewSql2='CREATE VIEW b_view AS SELECT * FROM a_tbl WHERE phone IS NOT NULL WITH CHECK OPTION'
                 self.cursor.execute(viewSql2)
 
         def tearDown(self):
-                nsql2='drop view if exists v;'
+                nsql2='drop view v'
                 self.cursor.execute(nsql2)
 
-                nsql2='drop view if exists b_view'
+                nsql2='drop view b_view'
                 self.cursor.execute(nsql2)
                 self.cursor.close()
                 self.conn.close()
@@ -73,7 +73,7 @@ class ExecuteViewTest(unittest.TestCase):
         def test_alter(self):
                 print "view alter!"
 
-                alterSql="ALTER VIEW b_view ADD QUERY SELECT * FROM py_a_tbl WHERE id IN (1,2)"
+                alterSql="ALTER VIEW b_view ADD QUERY SELECT * FROM a_tbl WHERE id IN (1,2)"
                 result_up=self.cursor.execute(alterSql)
                 print ("alterSql",result_up)
                 #self.assertEqual(result_up, 1)
@@ -93,9 +93,9 @@ class ExecuteViewTest(unittest.TestCase):
                    result_up=self.cursor.execute(alterSql)
                    print ("alterSql",result_up)
                 except Exception,e:
-                   #print ("str(e)",e)
+                   print ("str(e)",e)
                    value=str(e)
-                   self.assertEqual(value[1:5],"-495")
+                   self.assertEqual(value,"(-495, 'ERROR: DBMS, -495, Execute: Check option exception on view b_view. update a_tbl b_view set b_view.phone=null where ((b_view.phone is not null ))\\n-- check condition: ((b_view.phone is not null ))')")
                 
 
 if __name__ == '__main__':

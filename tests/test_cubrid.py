@@ -1,23 +1,11 @@
 import unittest
 import _cubrid
 from _cubrid import *
-
-from xml.dom import minidom
-
+import time
 
 class DatabaseTest(unittest.TestCase):
     driver = _cubrid
-
-    xmlt = minidom.parse('python_config.xml')
-    ips = xmlt.childNodes[0].getElementsByTagName('ip')
-    ip = ips[0].childNodes[0].toxml()
-    ports = xmlt.childNodes[0].getElementsByTagName('port')
-    port = ports[0].childNodes[0].toxml()
-    dbnames = xmlt.childNodes[0].getElementsByTagName('dbname')
-    dbname = dbnames[0].childNodes[0].toxml()
-    conStr = "CUBRID:"+ip+":"+port+":"+dbname+":::"
-
-    connect_args = (conStr, 'dba', '')
+    connect_args = ('CUBRID:localhost:33000:demodb', 'public')
     connect_kw_args = {}
 
     def setUp(self):
@@ -26,7 +14,7 @@ class DatabaseTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _check_table_exist(self, connect):
+    def _check_table_exist (self, connect):
         cursor = connect.cursor()
         cursor.prepare('DROP TABLE IF EXISTS test_cubrid')
         cursor.execute()
@@ -42,7 +30,7 @@ class DatabaseTest(unittest.TestCase):
             return con
         except AttributeError:
             self.fail("No connect method found in self.driver module")
-
+            
     def test_connect(self):
         con = self._connect()
         con.close()
@@ -172,13 +160,13 @@ class DatabaseTest(unittest.TestCase):
     def test_autocommit(self):
         con = self._connect()
         try:
-            self.assertEqual(con.autocommit, True,
-                    'connection.autocommit default is True')
-            con.set_autocommit(True)
-            self.assertEqual(con.autocommit, True,
+            self.assertEqual(con.autocommit, 'TRUE',
+                    'connection.autocommit default is FALSE')
+            con.set_autocommit('ON')
+            self.assertEqual(con.autocommit, 'TRUE',
                     'connection.autocommit should TURE after set on')
-            con.set_autocommit(False)
-            self.assertEqual(con.autocommit, False,
+            con.set_autocommit('OFF')
+            self.assertEqual(con.autocommit, 'FALSE',
                     'connection.autocommit should TURE after set on')
         finally:
             con.close()
@@ -212,7 +200,7 @@ class DatabaseTest(unittest.TestCase):
             cur.prepare("insert into test_cubrid(name) values ('Blair')")
             cur.execute()
             insert_id = con.insert_id()
-            self.assertEqual(insert_id, 1000000000000,
+            self.assertEqual(insert_id, '1000000000000',
                     'connection.insert_id() get incorrect result')
         finally:
             cur.close()
@@ -297,7 +285,7 @@ class DatabaseTest(unittest.TestCase):
         finally:
             cur.close()
             con.close()
-
+   
     def test_bind_int(self):
         t_bind_int = 'create table test_cubrid (id int)'
         samples_int = ['100', '200', '300', '400']
@@ -321,7 +309,7 @@ class DatabaseTest(unittest.TestCase):
         cur = con.cursor()
         try:
             cur.prepare(ddl_float)
-            cur.execute()
+            cur.execute()            
             cur.prepare("insert into test_cubrid values (?)")
             cur.bind_param(1, '3.14')
             cur.execute()
@@ -466,17 +454,14 @@ class DatabaseTest(unittest.TestCase):
         finally:
             cur.close()
             con.close()
-
-
+    
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(DatabaseTest("test_bind_timestamp"))
     return suite
 
 if __name__ == '__main__':
-    log_file = 'test_cubrid.result'
-    f = open(log_file, "w")
-    unittest.TextTestRunner(
-        verbosity=2, stream=f).run(
-        unittest.TestLoader().loadTestsFromTestCase(DatabaseTest))
-    f.close()
+    #unittest.main(defaultTest = 'suite')
+    #unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(DatabaseTest)
+    unittest.TextTestRunner(verbosity=2).run(suite)

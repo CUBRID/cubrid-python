@@ -259,5 +259,6 @@ class InvalidDataTypeTest(unittest.TestCase):
                 return str
 
 if __name__ == '__main__':
-	suite = unittest.TestLoader().loadTestsFromTestCase(InvalidDataTypeTest)
-	unittest.TextTestRunner(verbosity=2).run(suite)
+	#http://jira.cubrid.org/browse/APIS-410
+        suite = unittest.TestLoader().loadTestsFromTestCase(InvalidDataTypeTest)
+	#unittest.TextTestRunner(verbosity=2).run(suite)

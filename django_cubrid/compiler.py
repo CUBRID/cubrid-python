@@ -1,13 +1,6 @@
-import django
-
 from django.db.models.sql import compiler
 
-
 class SQLCompiler(compiler.SQLCompiler):
-    def resolve_columns (self, row, fields=()):
-        # This function is needed to pass "AdminViewBasicTest" test scenario
-        return row
-
     def as_sql(self, with_limits=True, with_col_aliases=False):
         """
         Creates the SQL for this query. Returns the SQL string and list of
@@ -34,27 +27,17 @@ class SQLCompiler(compiler.SQLCompiler):
 
         return sql, params
 
-
 class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
     pass
-
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):
     pass
 
-
 class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
     pass
-
 
 class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
     pass
 
-
-if django.VERSION >= (1, 6) and django.VERSION < (1, 8):
-
-    class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
-        pass
-
-    class SQLDateTimeCompiler(compiler.SQLDateTimeCompiler, SQLCompiler):
-        pass
+class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
+    pass

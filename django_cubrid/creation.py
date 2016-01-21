@@ -2,16 +2,14 @@ import sys
 import os
 import time
 import subprocess
-import django
 
-if django.VERSION >= (1, 8):
-    from django.db.backends.base.creation import BaseDatabaseCreation
-else:
-    from django.db.backends.creation import BaseDatabaseCreation
+from django.db.backends.creation import BaseDatabaseCreation
+from django.core.management import call_command
+from django.conf import settings
+
 # The prefix to put on the default database name when creating
 # the test database.
 TEST_DATABASE_PREFIX = 'test_'
-
 
 class DatabaseCreation(BaseDatabaseCreation):
     # This dictionary maps Field objects to their associated CUBRID column
@@ -20,7 +18,6 @@ class DatabaseCreation(BaseDatabaseCreation):
     # If a column type is set to None, it won't be included in the output.
     data_types = {
         'AutoField':         'integer AUTO_INCREMENT',
-        'BinaryField':       'BLOB',
         'BooleanField':      'smallint',
         'CharField':         'varchar(%(max_length)s)',
         'CommaSeparatedIntegerField': 'varchar(%(max_length)s)',
@@ -32,8 +29,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         'FloatField':        'double precision',
         'IntegerField':      'integer',
         'BigIntegerField':   'bigint',
-        'IPAddressField':    'varchar(15)',
-        'GenericIPAddressField':    'varchar(39)',
+        'IPAddressField':    'char(15)',
         'NullBooleanField':  'smallint',
         'OneToOneField':     'integer',
         'PositiveIntegerField': 'integer',
@@ -44,30 +40,10 @@ class DatabaseCreation(BaseDatabaseCreation):
         'TimeField':         'time',
     }
 
-    if django.VERSION < (1, 6):
-        def sql_for_inline_foreign_key_references(self, field, known_models, style):
+    def sql_for_inline_foreign_key_references(self, field, known_models, style):
             "Return the SQL snippet defining the foreign key reference for a field"
             qn = self.connection.ops.quote_name
             if field.rel.to in known_models:
-                output = [style.SQL_KEYWORD('FOREIGN KEY') + ' ' + \
-                    style.SQL_KEYWORD('REFERENCES') + ' ' + \
-                    style.SQL_TABLE(qn(field.rel.to._meta.db_table)) + ' (' + \
-                    style.SQL_FIELD(qn(field.rel.to._meta.get_field(field.rel.field_name).column)) + ')' +
-                    self.connection.ops.deferrable_sql()
-                ]
-                pending = False
-            else:
-                # We haven't yet created the table to which this field
-                # is related, so save it for later.
-                output = []
-                pending = True
-
-            return output, pending
-    else:
-        def sql_for_inline_foreign_key_references(self, model, field, known_models, style):
-            qn = self.connection.ops.quote_name
-            rel_to = field.rel.to
-            if rel_to in known_models or rel_to == model:
                 output = [style.SQL_KEYWORD('FOREIGN KEY') + ' ' + \
                     style.SQL_KEYWORD('REFERENCES') + ' ' + \
                     style.SQL_TABLE(qn(field.rel.to._meta.db_table)) + ' (' + \
@@ -86,7 +62,7 @@ class DatabaseCreation(BaseDatabaseCreation):
     def sql_indexes_for_model(self, model, style):
         """ 
         Returns the CREATE INDEX SQL statements for a single model.
-        The reference coloum can't be indexed in CUBRID.
+        The reference coloum can't be indexed in Cubrid.
         """
         if not model._meta.managed or model._meta.proxy:
             return []
@@ -94,10 +70,6 @@ class DatabaseCreation(BaseDatabaseCreation):
         for f in model._meta.local_fields:
             if not f.rel:
                 output.extend(self.sql_indexes_for_field(model, f, style))
-
-        for fs in model._meta.index_together:
-            fields = [model._meta.get_field_by_name(f)[0] for f in fs]
-            output.extend(self.sql_indexes_for_fields(model, fields, style))
         return output
 
     def _create_test_db(self, verbosity, autoclobber):
@@ -112,24 +84,10 @@ class DatabaseCreation(BaseDatabaseCreation):
         qn = self.connection.ops.quote_name
 
         # Create the test database and start the cubrid server.
-        create_command = ["cubrid", "createdb" , "--db-volume-size=20M", "--log-volume-size=20M", test_database_name, "en_US.utf8"]
-        start_command = ["cubrid", "server", "start", test_database_name]
-        stop_command = ["cubrid", "server", "stop", test_database_name]
-        delete_command = ["cubrid", "deletedb", test_database_name]
-
         try:
-            server_version = self.connection.get_server_version().split(".")
-            # server_version = ["9", "x", "x", "x"]
-            if int (server_version[0]) <= 8: #8.x version
-                # locale argument in the createdb command must be removed.
-                create_command.pop(-1)
-        except:
-            pass
-
-        try:
-            subprocess.call(create_command)
+            subprocess.call(["cubrid", 'createdb' , '--db-volume-size=20M', '--log-volume-size=20M', "%s" % test_database_name])
             print 'Created'
-            subprocess.call(start_command)
+            subprocess.call(["cubrid", "server", "start", "%s" % test_database_name])
             print 'Started'
 
         except Exception, e:
@@ -140,12 +98,12 @@ class DatabaseCreation(BaseDatabaseCreation):
                 try:
                     if verbosity >= 1:
                         print "Destroying old test database..."
-                        subprocess.call(stop_command)
-                        subprocess.call(delete_command)
+                        subprocess.call(["cubrid", "server", "stop", "%s" % test_database_name])
+                        subprocess.call(["cubrid", "deletedb", "%s" % test_database_name])
 
                         print "Creating test database..."
-                        subprocess.call(create_command)
-                        subprocess.call(start_command)
+                        subprocess.call(["cubrid", 'createdb' , '--db-volume-size=20M', '--log-volume-size=20M', "%s" % test_database_name])
+                        subprocess.call(["cubrid", "server", "start", "%s" % test_database_name])
                 except Exception, e:
                     sys.stderr.write("Got an error recreating the test database: %s\n" % e)
                     sys.exit(2)
@@ -189,9 +147,9 @@ class DatabaseCreation(BaseDatabaseCreation):
         cursor = self.connection.cursor()
         self.set_autocommit()
         time.sleep(1) # To avoid "database is being accessed by other users" errors.
-        p = subprocess.Popen(["cubrid", "server", "stop", test_database_name])
+        p = subprocess.Popen(["cubrid", "server", "stop", "%s" % test_database_name])
         ret = os.waitpid(p.pid, 0)[1]
-        p = subprocess.Popen(["cubrid", "deletedb", test_database_name])
+        p = subprocess.Popen(["cubrid", "deletedb", "%s" % test_database_name])
         ret = os.waitpid(p.pid, 0)[1]
 
         self.connection.close()
