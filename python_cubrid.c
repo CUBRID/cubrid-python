@@ -43,6 +43,13 @@ static struct _cubrid_isolation
 } cubrid_isolation[] =
 {
   {
+  TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE,
+      "CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE"},
+  {
+  TRAN_COMMIT_CLASS_COMMIT_INSTANCE, "CUBRID_COMMIT_CLASS_COMMIT_INSTANCE"},
+  {
+  TRAN_REP_CLASS_UNCOMMIT_INSTANCE, "CUBRID_REP_CLASS_UNCOMMIT_INSTANCE"},
+  {
   TRAN_REP_CLASS_COMMIT_INSTANCE, "CUBRID_REP_CLASS_COMMIT_INSTANCE"},
   {
   TRAN_REP_CLASS_REP_INSTANCE, "CUBRID_REP_CLASS_REP_INSTANCE"},
@@ -475,7 +482,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
       return -1;
     }
 
-  if (level - 1 < TRAN_REP_CLASS_COMMIT_INSTANCE
+  if (level - 1 < TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE
       || level - 1 > TRAN_SERIALIZABLE)
     {
       level = TRAN_SERIALIZABLE + 1;
@@ -483,7 +490,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
 
   self->isolation_level =
     _cubrid_return_PyString_FromString (cubrid_isolation
-					[level - 4].isolation);
+					[level - 1].isolation);
   if (autocommit == CCI_AUTOCOMMIT_TRUE)
     {
       self->autocommit = _cubrid_return_PyBool_FromLong (1);
@@ -801,6 +808,9 @@ The level defines the different phenomena can happen in the\n\
 database between concurrent transactions.\n\
 \n\
 isolation_level maybe::\n\
+  CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE\n\
+  CUBRID_COMMIT_CLASS_COMMIT_INSTANCE\n\
+  CUBRID_REP_CLASS_UNCOMMIT_INSTANCE\n\
   CUBRID_REP_CLASS_COMMIT_INSTANCE\n\
   CUBRID_REP_CLASS_REP_INSTANCE\n\
   CUBRID_SERIALIZABLE\n\
@@ -833,7 +843,7 @@ _cubrid_ConnectionObject_set_isolation_level (_cubrid_ConnectionObject * self,
 
   self->isolation_level =
     _cubrid_return_PyString_FromString (cubrid_isolation
-					[level - 4].isolation);
+					[level - 1].isolation);
 
   Py_INCREF (Py_None);
   return Py_None;
@@ -4108,7 +4118,7 @@ PyTypeObject _cubrid_CursorObject_type = {
   0,				/* tp_free */
 };
 
-#define _CUBRID_VERSION_	"10.0.0.0001"
+#define _CUBRID_VERSION_	"9.3.0.0003"
 static char _cubrid_doc[] = "CUBRID API Module for Python";
 
 #if PY_MAJOR_VERSION >= 3
@@ -4216,6 +4226,21 @@ all_ins (PyObject * d)
     return -1;
 
   if (ins (d, "CUBRID_EXEC_THREAD", (long) CUBRID_EXEC_THREAD))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE",
+       (long) TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_COMMIT_CLASS_COMMIT_INSTANCE",
+       (long) TRAN_COMMIT_CLASS_COMMIT_INSTANCE))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_REP_CLASS_UNCOMMIT_INSTANCE",
+       (long) TRAN_REP_CLASS_UNCOMMIT_INSTANCE))
     return -1;
 
   if (ins

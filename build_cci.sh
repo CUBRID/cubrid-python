@@ -6,6 +6,7 @@ if [ -f cci-src/cci/.libs/libcascci.a ];then
   exit 0
 fi
 
+tar xvjf cci-src.tar.bz2
 cd cci-src
 chmod +x configure
 chmod +x external/libregex38a/configure

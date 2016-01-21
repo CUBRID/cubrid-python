@@ -1,6 +1,0 @@
-<PythonConfig>
-  <ip>test-db-server</ip>
-  <port>33000</port>
-  <dbname>demodb</dbname>
-  <remoteIP>localhost</remoteIP>
-</PythonConfig>
