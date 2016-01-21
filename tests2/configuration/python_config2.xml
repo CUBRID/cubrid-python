@@ -1,0 +1,6 @@
+<PythonConfig>
+  <ip>10.34.64.218</ip>
+  <port>30000</port>
+  <dbname>demodb</dbname>
+  <remoteIP>10.34.64.218</remoteIP>
+</PythonConfig>

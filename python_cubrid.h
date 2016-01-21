@@ -26,7 +26,6 @@
 #define CUBRID_ER_READ_FILE                 -30016
 #define CUBRID_ER_WRITE_FILE                -30017
 #define CUBRID_ER_LOB_NOT_EXIST             -30018
-#define CUBRID_ER_INVALID_CURSOR            -30019
 #define CUBRID_ER_END                       -31000
 
 #define CUBRID_EXEC_ASYNC           CCI_EXEC_ASYNC
@@ -53,12 +52,6 @@
 #define CUBRID_LONG_LONG long long
 #endif
 
-typedef enum
-{
-  CURSOR_STATE_CLOSED,
-  CURSOR_STATE_OPENED
-} CURSOR_STATE;
-
 typedef struct
 {
   PyObject_HEAD
@@ -75,7 +68,6 @@ typedef struct
 typedef struct
 {
   PyObject_HEAD
-  CURSOR_STATE state;
   int handle;
   int connection;  
   int col_count;

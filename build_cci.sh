@@ -9,11 +9,10 @@ fi
 cd cci-src
 chmod +x configure
 chmod +x external/libregex38a/configure
-chmod +x external/libregex38a/install-sh
 if [ "$1" = 'x86' ];then
   ./configure 
 else
-  ./configure --enable-64bit 
+  ./configure --enable-64bit
 fi
 
 make

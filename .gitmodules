@@ -1,3 +1,0 @@
-[submodule "cci-src"]
-	path = cci-src
-	url = git@github.com:CUBRID/cubrid-cci.git

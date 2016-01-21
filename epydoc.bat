@@ -1,0 +1,1 @@
+E:\python\32\Python27\python.exe E:\python\32\Python27\Scripts\epydoc.py --html --no-sourcecode -v -o ../py_doc CUBRIDdb _cubrid

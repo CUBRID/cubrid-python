@@ -27,11 +27,6 @@
 static PyObject *_cubrid_error;
 static PyObject *_cubrid_interface_error;
 static PyObject *_cubrid_database_error;
-static PyObject *_cubrid_data_error;
-static PyObject *_cubrid_operational_error;
-static PyObject *_cubrid_integrity_error;
-static PyObject *_cubrid_internal_error;
-static PyObject *_cubrid_programming_error;
 static PyObject *_cubrid_not_supported_error;
 
 static PyObject *_func_Decimal;
@@ -43,6 +38,13 @@ static struct _cubrid_isolation
 } cubrid_isolation[] =
 {
   {
+  TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE,
+      "CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE"},
+  {
+  TRAN_COMMIT_CLASS_COMMIT_INSTANCE, "CUBRID_COMMIT_CLASS_COMMIT_INSTANCE"},
+  {
+  TRAN_REP_CLASS_UNCOMMIT_INSTANCE, "CUBRID_REP_CLASS_UNCOMMIT_INSTANCE"},
+  {
   TRAN_REP_CLASS_COMMIT_INSTANCE, "CUBRID_REP_CLASS_COMMIT_INSTANCE"},
   {
   TRAN_REP_CLASS_REP_INSTANCE, "CUBRID_REP_CLASS_REP_INSTANCE"},
@@ -50,6 +52,17 @@ static struct _cubrid_isolation
   TRAN_SERIALIZABLE, "CUBRID_SERIALIZABLE"},
   {
   0, "CUBRID_TRAN_UNKNOWN_ISOLATION"}
+};
+
+static struct _cubrid_autocommit
+{
+  char *autocommit;
+} cubrid_autocommit[2] =
+{
+  {
+  "FALSE"},
+  {
+  "TRUE"}
 };
 
 static struct _error_message
@@ -93,15 +106,12 @@ static struct _error_message
   {
   CUBRID_ER_LOB_NOT_EXIST, "LOB not exist"},
   {
-  CUBRID_ER_INVALID_CURSOR,
-      "The cursor has been closed. No operation is allowed any more."},
-  {
   0, ""}
 };
 
 static void *libcascci = NULL;
 typedef int (*CCI_GET_LAST_INSERT_ID) (int con, void *buff,
-				       T_CCI_ERROR * err_buf);
+                                       T_CCI_ERROR * err_buf);
 static CCI_GET_LAST_INSERT_ID cci_get_last_insert_id_fp = NULL;
 
 
@@ -110,8 +120,8 @@ typedef int Py_ssize_t;
 #endif
 
 static PyObject *
-_cubrid_return_PyUnicode_FromString (const char *buf, Py_ssize_t size,
-				     const char *encoding, const char *errors)
+_cubrid_return_PyUnicode_FromString (const char *buf, Py_ssize_t size, 
+        const char *encoding, const char *errors)
 {
   return PyUnicode_Decode (buf, size, encoding, errors);
 }
@@ -134,12 +144,6 @@ _cubrid_return_PyInt_FromLong (long n)
 #else
   return PyInt_FromLong (n);
 #endif
-}
-
-static PyObject *
-_cubrid_return_PyBool_FromLong (long n)
-{
-  return PyBool_FromLong (n);
 }
 
 static int
@@ -181,51 +185,14 @@ handle_error (int e, T_CCI_ERROR * error)
       if (error)
 	{
 	  err_code = error->err_code;
-	  switch (err_code)
-	    {
-	      /* programming error list */
-	    case -493:
-	      exception = _cubrid_programming_error;
-	      break;
-
-	      /* operational error list */
-	    case -669:
-	    case -673:
-	    case -677:
-	    case -1069:
-	    case -1071:
-	      exception = _cubrid_operational_error;
-	      break;
-
-	      /* integrity error list */
-	    case -205:		/* not null constraint violation... */
-	    case -494:		/* semantic error - not null constraint violation... */
-	    case -631:
-	    case -670:
-	    case -886:
-	    case -919:
-	    case -920:
-	    case -921:
-	    case -922:
-	    case -923:
-	    case -924:
-	    case -1063:
-	    case -1067:
-	      exception = _cubrid_integrity_error;
-	      break;
-
-	    default:
-	      exception = _cubrid_database_error;
-	      break;
-	    }
-
 	  snprintf (err_msg, CUBRID_ER_MSG_LEN, "%s", error->err_msg);
+          exception = _cubrid_database_error;
 	}
       else
 	{
 	  err_code = 0;
 	  snprintf (err_msg, CUBRID_ER_MSG_LEN, "Unknown DBMS Error");
-	  exception = _cubrid_not_supported_error;
+          exception = _cubrid_not_supported_error;
 	}
     }
   else
@@ -271,7 +238,8 @@ handle_error (int e, T_CCI_ERROR * error)
   return NULL;
 }
 
-static char _cubrid_connect__doc__[] = "connect(url[,user[,password]])\n\
+static char _cubrid_connect__doc__[] = 
+"connect(url[,user[,password]])\n\
 Establish the environment for connecting to your server by using\n\
 connection information passed with a url string argument. If the\n\
 HA feature is enabled in CUBRID, you must specify the connection\n\
@@ -315,13 +283,15 @@ _cubrid_connect (PyObject * self, PyObject * args, PyObject * kwargs)
 			kwargs);
 }
 
-static char _cubrid_escape_string__doc__[] = "escape_string()\n\
+static char _cubrid_escape_string__doc__[] =
+"escape_string()\n\
 Escape special characters in a string for use in an SQL statement";
 
 static PyObject *
-_cubrid_escape_string (PyObject * self, PyObject * args, PyObject * kwargs)
+_cubrid_escape_string (PyObject * self, PyObject *args,
+                       PyObject * kwargs)
 {
-  static char *kwList[] = { "escape_string", "no_backslash_escapes", NULL };
+  static char *kwList[] = {"escape_string", "no_backslash_escapes", NULL};
   int no_backslash_escapes = -1;
   char *unescape_string = NULL, *escape_string = NULL;
   int len = -1, res;
@@ -330,8 +300,7 @@ _cubrid_escape_string (PyObject * self, PyObject * args, PyObject * kwargs)
   PyObject *op;
 
   if (!PyArg_ParseTupleAndKeywords (args, kwargs,
-				    "s#|i", kwList, &unescape_string, &len,
-				    &no_backslash_escapes))
+            "s#|i", kwList, &unescape_string, &len, &no_backslash_escapes))
     {
       return NULL;
     }
@@ -357,11 +326,10 @@ _cubrid_escape_string (PyObject * self, PyObject * args, PyObject * kwargs)
       return handle_error (CUBRID_ER_NO_MORE_MEMORY, NULL);
     }
 
-  memset (escape_string, 0, len * 2 + 16);
+  memset(escape_string, 0, len * 2 + 16);
 
   if ((res = cci_escape_string (no_backslash_escapes,
-				escape_string, unescape_string, len,
-				&error)) < 0)
+                  escape_string, unescape_string, len, &error)) < 0)
     {
       free (escape_string);
       return handle_error (res, &error);
@@ -430,7 +398,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
     {
       handle_error (res, &error);
       return -1;
-    }
+    }  
   self->url = strdup (url);
   self->user = strdup (user);
 
@@ -452,7 +420,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
     {
       //handle_error (res, &error);
       //return -1;
-      max_string_len = 0;
+      max_string_len=0;
     }
 
   self->max_string_len = _cubrid_return_PyInt_FromLong (max_string_len);
@@ -475,23 +443,19 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
       return -1;
     }
 
-  if (level - 1 < TRAN_REP_CLASS_COMMIT_INSTANCE
-      || level - 1 > TRAN_SERIALIZABLE)
-    {
-      level = TRAN_SERIALIZABLE + 1;
-    }
+  if(level-1 <TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE 
+        ||level-1 > TRAN_SERIALIZABLE)
+  {
+      level =TRAN_SERIALIZABLE+1;
+  }
 
   self->isolation_level =
-    _cubrid_return_PyString_FromString (cubrid_isolation
-					[level - 4].isolation);
-  if (autocommit == CCI_AUTOCOMMIT_TRUE)
-    {
-      self->autocommit = _cubrid_return_PyBool_FromLong (1);
-    }
-  else
-    {
-      self->autocommit = _cubrid_return_PyBool_FromLong (0);
-    }
+    _cubrid_return_PyString_FromString (cubrid_isolation[level - 1].
+					isolation);
+  self->autocommit =
+    _cubrid_return_PyString_FromString (cubrid_autocommit[autocommit].
+					autocommit);
+
   res = cci_end_tran (con, CCI_TRAN_COMMIT, &error);
   if (res < 0)
     {
@@ -502,7 +466,8 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
   return 0;
 };
 
-static char _cubrid_ConnectionObject_cursor__doc__[] = "cursor()\n\
+static char _cubrid_ConnectionObject_cursor__doc__[] =
+"cursor()\n\
 Get the cursor class. Return a new Cursor Object.\n\
 \n\
 Example::\n\
@@ -544,7 +509,8 @@ _cubrid_ConnectionObject_cursor (_cubrid_ConnectionObject * self,
   return cursor;
 }
 
-static char _cubrid_ConnectionObject_lob__doc__[] = "lob()\n\
+static char _cubrid_ConnectionObject_lob__doc__[] =
+"lob()\n\
 Create a large object. Return a new lob object.\n\
 \n\
 Example::\n\
@@ -589,7 +555,7 @@ _cubrid_ConnectionObject_lob (_cubrid_ConnectionObject * self,
 }
 
 static char _cubrid_ConnectionObject_set__doc__[] =
-  "Create a LIST/SET/MULTISET object. Return a new LIST/SET/MULTISET object.\n\
+"Create a LIST/SET/MULTISET object. Return a new LIST/SET/MULTISET object.\n\
 \n\
     Example::\n\
     con = _cubrid.connect('CUBRID:localhost:30000:demodb:dba::')\n\
@@ -648,7 +614,8 @@ _cubrid_ConnectionObject_end_tran (_cubrid_ConnectionObject * self, int type)
   return Py_None;
 }
 
-static char _cubrid_ConnectionObject_commit__doc__[] = "commit()\n\
+static char _cubrid_ConnectionObject_commit__doc__[] =
+"commit()\n\
 Commit any pending transaction to the database.\n\
 CUBRID can be set to perform automatic commits at each operation,\n\
 set_autocommit() and set_isolation_level().\n";
@@ -665,7 +632,8 @@ _cubrid_ConnectionObject_commit (_cubrid_ConnectionObject * self,
   return _cubrid_ConnectionObject_end_tran (self, CCI_TRAN_COMMIT);
 }
 
-static char _cubrid_ConnectionObject_rollback__doc__[] = "rollback()\n\
+static char _cubrid_ConnectionObject_rollback__doc__[] =
+"rollback()\n\
 Roll back the start of any pending transaction to database. Closing\n\
 a connection without committing the changes first will cause an\n\
 implicit rollback to be performed.";
@@ -683,7 +651,7 @@ _cubrid_ConnectionObject_rollback (_cubrid_ConnectionObject * self,
 }
 
 static char _cubrid_ConnectionObject_server_version__doc__[] =
-  "server_version()\n\
+"server_version()\n\
 This function returns a string that represents the CUBRID server version.\n\
 Returns a string that represents the server version number.\n\
 \n\
@@ -715,7 +683,7 @@ _cubrid_ConnectionObject_server_version (_cubrid_ConnectionObject * self,
 }
 
 static char _cubrid_ConnectionObject_client_version__doc__[] =
-  "client_version()\n\
+"client_version()\n\
 This function returns a string that represents the client library version.\n\
 \n\
 Return a string that represents the CUBRID client library\n\
@@ -730,6 +698,7 @@ static PyObject *
 _cubrid_ConnectionObject_client_version (_cubrid_ConnectionObject * self,
 					 PyObject * args)
 {
+  int major, minor, patch;
   char info[256];
 
   if (!PyArg_ParseTuple (args, ""))
@@ -737,22 +706,24 @@ _cubrid_ConnectionObject_client_version (_cubrid_ConnectionObject * self,
       return NULL;
     }
 
-  cci_get_version_string (info, sizeof (info));
-  // Remove the prefix "VERSION="
-  return _cubrid_return_PyString_FromString (info + 8);
+  cci_get_version (&major, &minor, &patch);
+
+  sprintf (info, "%d.%d.%d", major, minor, patch);
+
+  return _cubrid_return_PyString_FromString (info);
 }
 
 static char _cubrid_ConnectionObject_set_autocommit__doc__[] =
-  "set_autocommit(mode)\n\
+"set_autocommit(mode)\n\
 This function set the autocommit mode.\n\
 It can enable/disable the transaction management.\n\
 \n\
-mode: bool. It will be True/False\n\
+mode: string. It will be ON/OFF, TRUE/FALSE, YES/NO\n\
 \n\
 Example::\n\
   import _cubrid\n\
   con = _cubrid.connect(\"CUBRID:localhost:33000:demodb:::\", \"public\")\n\
-  con.set_autocommit(True)\n\
+  con.set_autocommit('ON')\n\
   print con.autocommit\n\
   con.close()";
 
@@ -760,16 +731,16 @@ static PyObject *
 _cubrid_ConnectionObject_set_autocommit (_cubrid_ConnectionObject * self,
 					 PyObject * args)
 {
-  PyObject *autocommit_obj;
-  int mode;
-  int res;
+  char *mode = NULL;
+  int len, res;
 
-  if (!PyArg_ParseTuple (args, "O!", &PyBool_Type, &autocommit_obj))
+  if (!PyArg_ParseTuple (args, "s#", &mode, &len))
     {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
+      return NULL;
     }
-  mode = PyObject_IsTrue (autocommit_obj);
-  if (mode != 0)
+  if (!
+      (strncmp ("YES", mode, len) && strncmp ("TRUE", mode, len)
+       && strncmp ("ON", mode, len)))
     {
       res = cci_set_autocommit (self->handle, CCI_AUTOCOMMIT_TRUE);
       if (res < 0)
@@ -777,9 +748,12 @@ _cubrid_ConnectionObject_set_autocommit (_cubrid_ConnectionObject * self,
 	  return handle_error (res, NULL);
 	}
 
-      self->autocommit = _cubrid_return_PyBool_FromLong (1);
+      self->autocommit = _cubrid_return_PyString_FromString ("TRUE");
     }
   else
+    if (!
+	(strncmp ("NO", mode, len) && strncmp ("FALSE", mode, len)
+	 && strncmp ("OFF", mode, len)))
     {
       res = cci_set_autocommit (self->handle, CCI_AUTOCOMMIT_FALSE);
       if (res < 0)
@@ -787,7 +761,11 @@ _cubrid_ConnectionObject_set_autocommit (_cubrid_ConnectionObject * self,
 	  return handle_error (res, NULL);
 	}
 
-      self->autocommit = _cubrid_return_PyBool_FromLong (0);
+      self->autocommit = _cubrid_return_PyString_FromString ("FALSE");
+    }
+  else
+    {
+      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
     }
 
   Py_INCREF (Py_None);
@@ -795,12 +773,15 @@ _cubrid_ConnectionObject_set_autocommit (_cubrid_ConnectionObject * self,
 }
 
 static char _cubrid_ConnectionObject_set_isolation_level__doc__[] =
-  "set_isolation(isolation_level)\n\
+"set_isolation(isolation_level)\n\
 Set the transaction isolation level for the current session.\n\
 The level defines the different phenomena can happen in the\n\
 database between concurrent transactions.\n\
 \n\
 isolation_level maybe::\n\
+  CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE\n\
+  CUBRID_COMMIT_CLASS_COMMIT_INSTANCE\n\
+  CUBRID_REP_CLASS_UNCOMMIT_INSTANCE\n\
   CUBRID_REP_CLASS_COMMIT_INSTANCE\n\
   CUBRID_REP_CLASS_REP_INSTANCE\n\
   CUBRID_SERIALIZABLE\n\
@@ -832,14 +813,15 @@ _cubrid_ConnectionObject_set_isolation_level (_cubrid_ConnectionObject * self,
     }
 
   self->isolation_level =
-    _cubrid_return_PyString_FromString (cubrid_isolation
-					[level - 4].isolation);
+    _cubrid_return_PyString_FromString (cubrid_isolation[level - 1].
+					isolation);
 
   Py_INCREF (Py_None);
   return Py_None;
 }
 
-static char _cubrid_ConnectionObject_ping__doc__[] = "ping()\n\
+static char _cubrid_ConnectionObject_ping__doc__[] =
+"ping()\n\
 Checks whether or not the connection to the server is working. This \n\
 function can be used by clients that remain idle for a long while,\n\
 to check whether or not the server has closed the connection and reconnect\n\
@@ -918,136 +900,8 @@ _cubrid_ConnectionObject_ping (_cubrid_ConnectionObject * self,
   return _cubrid_return_PyInt_FromLong (connected);
 }
 
-static char *
-_cubrid_dup_buf (char *src_buf, int size)
-{
-  int len = 0;
-  char *temp_buf = NULL;
-
-  if (src_buf != NULL)
-    {
-      len = strlen (src_buf);
-    }
-  else
-    {
-      len = size;
-    }
-  if (len <= 0)
-    {
-      return NULL;
-    }
-  temp_buf = (char *) malloc (len + 1);
-  if (NULL == temp_buf)
-    {
-      return NULL;
-    }
-  memset (temp_buf, 0, len + 1);
-  if (NULL != src_buf)
-    memcpy (temp_buf, src_buf, len);
-
-  return temp_buf;
-}
-
-static char *
-_cubrid_get_data_buf (int type, int num)
-{
-  switch (type)
-    {
-    case CCI_U_TYPE_BIT:
-    case CCI_U_TYPE_VARBIT:
-      return _cubrid_dup_buf (NULL, sizeof (T_CCI_BIT) * (num + 1));
-    default:
-      return _cubrid_dup_buf (NULL, sizeof (void *) * (num + 1));
-    }
-}
-
-static char _cubrid_ConnectionObject_batch_execute__doc__[] = "batch_execute()\n\
- The api can execute more than one sql statement in the same time\n\
-\n\
-Return values::\n\
-  Tuple: ({'err_no': 0, 'err_msg': 'success'},)\n\
-\n\
-Example::\n\
-  import _cubrid\n\
-  con = _cubrid.connect(\"CUBRID:localhost:33000:demodb:::\", \"public\")\n\
-  sql = (\"insert into test value('1');\", \"insert into test value('2');\")\n\
-  err = con.batch_execute(sql)\n\
-  con.close()";
-
-
-static PyObject *
-_cubrid_ConnectionObject_batch_execute (_cubrid_ConnectionObject * self,
-			       PyObject * args)
-{
-  int count, err_code, i, n_executed;
-  char **sql;
-  T_CCI_QUERY_RESULT *result;
-  T_CCI_ERROR cci_error;
-  PyObject *p_tube;
-  PyObject *p_value;
-  PyDictObject *p_result;
-  PyTupleObject *p_batch_result;
-  
-  if (!PyArg_ParseTuple (args, "O", &p_tube))
-    {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
-    }
-  if (!PyTuple_Check (p_tube))    
-    {      
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);    
-    }  
-  count = PyTuple_GET_SIZE (p_tube);
-  if (count <= 0)
-    {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);  
-    }
-  sql = (char **) _cubrid_get_data_buf (CCI_U_TYPE_CHAR, count + 1);
-  if (NULL == sql)
-    {
-      return handle_error (CUBRID_ER_NO_MORE_MEMORY, NULL);
-    }
-  for (i = 0; i < count; ++i)
-    {
-      p_value = PyTuple_GET_ITEM (p_tube, i);
-      sql[i] = PyString_AsString (p_value);
-    }
-  n_executed = cci_execute_batch (self->handle, count, sql, &result, &cci_error);
-  if (n_executed < 0)
-    {
-      free(sql);
-      return handle_error (n_executed, &cci_error);
-    }
-  free(sql);
-  p_batch_result = PyTuple_New(n_executed);
-  for (i = 0; i < n_executed; ++i)
-    {
-      p_result = PyDict_New();    
-      err_code = PyDict_SetItemString(
-        p_result, "err_no", _cubrid_return_PyInt_FromLong(result[i].err_no));
-      if (result[i].err_no >= 0)
-        {
-          PyDict_SetItemString(
-            p_result, "err_msg", _cubrid_return_PyString_FromString("success"));        
-        }
-      else
-        {
-          PyDict_SetItemString(
-            p_result, "err_msg", _cubrid_return_PyString_FromString(result[i].err_msg));
-        }
-
-      PyTuple_SetItem(p_batch_result, i, p_result);
-    }
-  
-  err_code = cci_query_result_free (result, n_executed);    
-  if (err_code < 0)    
-    {     
-      return handle_error (err_code, NULL);  
-    } 
-  return p_batch_result;
-}
-
-
-static char _cubrid_ConnectionObject_last_insert_id__doc__[] = "insert_id()\n\
+static char _cubrid_ConnectionObject_last_insert_id__doc__[] =
+"insert_id()\n\
 This function returns the value with the IDs generated or the\n\
 AUTO_INCREMENT columns that were updated by the previous INSERT\n\
 query. It returns None if the previous query does not generate\n\
@@ -1096,7 +950,7 @@ _cubrid_ConnectionObject_last_insert_id (_cubrid_ConnectionObject * self,
       strncpy (ret, name, sizeof (ret) - 1);
     }
 
-  return PyLong_FromString (ret, NULL, 10);
+  return _cubrid_return_PyString_FromString (ret);
 }
 
 static PyObject *
@@ -1173,7 +1027,7 @@ _cubrid_ConnectionObject_fetch_schema (_cubrid_ConnectionObject * self,
 }
 
 static char _cubrid_ConnectionObject_schema_info__doc__[] =
-  "schema_info(schema_type[,class_name[,attr_name]])\n\
+"schema_info(schema_type[,class_name[,attr_name]])\n\
 This function is used to get the requested schema information from\n\
 database. You have to designate class_name, if you want to get\n\
 information on certain class, attr_name, if you want to get\n\
@@ -1373,12 +1227,12 @@ _cubrid_ConnectionObject_schema_info (_cubrid_ConnectionObject * self,
 }
 
 static char _cubrid_ConnectionObject_escape_string__doc__[] =
-  "escape_string()\n\
+"escape_string()\n\
 Escape special characters in a string for use in an SQL statement";
 
 static PyObject *
 _cubrid_ConnectionObject_escape_string (_cubrid_ConnectionObject * self,
-					PyObject * args)
+				        PyObject * args)
 {
   char *unescape_string = NULL, *escape_string = NULL;
   int len = -1, res;
@@ -1402,11 +1256,10 @@ _cubrid_ConnectionObject_escape_string (_cubrid_ConnectionObject * self,
       return handle_error (CUBRID_ER_NO_MORE_MEMORY, NULL);
     }
 
-  memset (escape_string, 0, len * 2 + 16);
+  memset(escape_string, 0, len * 2 + 16);
 
   if ((res = cci_escape_string (self->handle,
-				escape_string, unescape_string, len,
-				&error)) < 0)
+                  escape_string, unescape_string, len, &error)) < 0)
     {
       free (escape_string);
       return handle_error (res, &error);
@@ -1423,7 +1276,8 @@ _cubrid_ConnectionObject_escape_string (_cubrid_ConnectionObject * self,
   return op;
 }
 
-static char _cubrid_ConnectionObject_close__doc__[] = "close()\n\
+static char _cubrid_ConnectionObject_close__doc__[] =
+"close()\n\
 Close the connection now.";
 
 static PyObject *
@@ -1431,18 +1285,13 @@ _cubrid_ConnectionObject_close (_cubrid_ConnectionObject * self,
 				PyObject * args)
 {
   T_CCI_ERROR error;
-  int err_code;
-  if(self->handle <= 0)
+
+  if (self->handle)
     {
-      Py_INCREF (Py_None);
-      return Py_None;
+      cci_disconnect (self->handle, &error);
+      self->handle = 0;
     }
-  err_code = cci_disconnect (self->handle, &error);
-  if (err_code < 0)
-    {
-      return handle_error (err_code, &error);
-    }
-  self->handle = 0;
+
   if (self->url)
     {
       free (self->url);
@@ -1510,7 +1359,6 @@ _cubrid_CursorObject_init (_cubrid_CursorObject * self, PyObject * args,
 
   Py_INCREF (conn);
 
-  self->state = CURSOR_STATE_OPENED;
   self->handle = 0;
   self->connection = conn->handle;
   Py_INCREF (Py_None);
@@ -1521,24 +1369,19 @@ _cubrid_CursorObject_init (_cubrid_CursorObject * self, PyObject * args,
   self->row_count = -1;
   self->cursor_pos = 0;
 
-  memset (self->charset, 0, sizeof (self->charset));
+  memset(self->charset, 0, sizeof(self->charset));
 
   return 0;
 }
 
 static char _cubrid_CursorObject__set_charset_name__doc__[] =
-  "Only used internally. This function should not be used by user.";
+"Only used internally. This function should not be used by user.";
 
 static PyObject *
-_cubrid_CursorObject__set_charset_name (_cubrid_CursorObject * self,
-					PyObject * args)
+_cubrid_CursorObject__set_charset_name (_cubrid_CursorObject * self, PyObject * args)
 {
   char *charset = NULL;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "s", &charset))
     {
       return NULL;
@@ -1546,7 +1389,7 @@ _cubrid_CursorObject__set_charset_name (_cubrid_CursorObject * self,
 
   if (charset != NULL && *charset != '\0')
     {
-      snprintf (self->charset, sizeof (self->charset), "%s", charset);
+      snprintf(self->charset, sizeof(self->charset), "%s", charset);
     }
 
   Py_INCREF (Py_None);
@@ -1576,7 +1419,8 @@ _cubrid_CursorObject_reset (_cubrid_CursorObject * self)
     }
 }
 
-static char _cubrid_CursorObject_prepare__doc__[] = "prepare(sql)\n\
+static char _cubrid_CursorObject_prepare__doc__[] =
+"prepare(sql)\n\
 This function creates a prepared statement. A prepared statement is a\n\
 server-side object that can be used to optimize performance. You can \n\
 use this statement effectively to execute repeatedly or to process \n\
@@ -1594,11 +1438,6 @@ _cubrid_CursorObject_prepare (_cubrid_CursorObject * self, PyObject * args)
   int res;
   T_CCI_ERROR error;
   char *stmt = "";
-
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "s", &stmt))
     {
       return NULL;
@@ -1617,7 +1456,7 @@ _cubrid_CursorObject_prepare (_cubrid_CursorObject * self, PyObject * args)
 }
 
 static char _cubrid_CursorObject_bind_param__doc__[] =
-  "bind_param(index, string,bind_type)\n\
+"bind_param(index, string,bind_type)\n\
 This function is used to bind values in prepare() variable. You can pass\n\
 any type as string, except BLOB/CLOB type.\n\
 In CUBRID shard envrioment, the bind_type must be included in the bind_param function.\n\
@@ -1652,18 +1491,14 @@ _cubrid_CursorObject_bind_param (_cubrid_CursorObject * self, PyObject * args)
 {
   int res, index = -1;
   char *value = NULL;
-  int type = 0;
+  int type=0;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!self->handle)
     {
       return handle_error (CUBRID_ER_SQL_UNPREPARE, NULL);
     }
 
-  if (!PyArg_ParseTuple (args, "iz|i", &index, &value, &type))
+  if (!PyArg_ParseTuple (args, "iz|i", &index, &value,&type))
     {
       return NULL;
     }
@@ -1672,16 +1507,17 @@ _cubrid_CursorObject_bind_param (_cubrid_CursorObject * self, PyObject * args)
     {
       return handle_error (CUBRID_ER_PARAM_UNBIND, NULL);
     }
-  if (type != 0)
+  if(type!=0)
     {
-      res =
-	cci_bind_param (self->handle, index, CCI_A_TYPE_STR, value, type, 0);
+       res =
+        cci_bind_param (self->handle, index, CCI_A_TYPE_STR, value,
+		    type, 0);   
     }
   else
     {
       res =
-	cci_bind_param (self->handle, index, CCI_A_TYPE_STR, value,
-			CCI_U_TYPE_CHAR, 0);
+        cci_bind_param (self->handle, index, CCI_A_TYPE_STR, value,
+		    CCI_U_TYPE_CHAR, 0);
     }
 
   if (res < 0)
@@ -1693,7 +1529,8 @@ _cubrid_CursorObject_bind_param (_cubrid_CursorObject * self, PyObject * args)
   return Py_None;
 }
 
-static char _cubrid_CursorObject_bind_lob__doc__[] = "bind_lob(n, lob)\n\
+static char _cubrid_CursorObject_bind_lob__doc__[] =
+"bind_lob(n, lob)\n\
 bind BLOB/CLOB type in prepare() variable.\n\
 \n\
 Parameters::\n\
@@ -1733,10 +1570,6 @@ _cubrid_CursorObject_bind_lob (_cubrid_CursorObject * self, PyObject * args)
   _cubrid_LobObject *lob;
   int index, res;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "iO!", &index, &_cubrid_LobObject_type, &lob))
     {
       return NULL;
@@ -1767,7 +1600,8 @@ _cubrid_CursorObject_bind_lob (_cubrid_CursorObject * self, PyObject * args)
   return Py_None;
 }
 
-static char _cubrid_CursorObject_bind_set__doc__[] = "bind_set(index,data)\n\
+static char _cubrid_CursorObject_bind_set__doc__[] =
+"bind_set(index,data)\n\
 bind_set LIST/SET/MULTISET data. To use this function.\n\
 index:actual value for binding\n\
 data:tuple object \n\
@@ -1791,19 +1625,15 @@ _cubrid_CursorObject_bind_Set (_cubrid_CursorObject * self, PyObject * args)
   _cubrid_SetObject *set;
   int index, res;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "iO!", &index, &_cubrid_SetObject_type, &set))
     {
       return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
     }
 
-  res =
+    res =
     cci_bind_param (self->handle, index, CCI_A_TYPE_SET,
-		    (void *) set->data, CCI_U_TYPE_SET, CCI_BIND_PTR);
-  if (res < 0)
+    		(void *)set->data, CCI_U_TYPE_SET, CCI_BIND_PTR);
+      if (res < 0)
     {
       return handle_error (res, NULL);
     }
@@ -1819,10 +1649,6 @@ _cubrid_CursorObject_set_description (_cubrid_CursorObject * self)
   int i;
   int datatype, precision, scale, nullable;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (self->col_count == 0)
     {
       Py_XDECREF (self->description);
@@ -1841,8 +1667,7 @@ _cubrid_CursorObject_set_description (_cubrid_CursorObject * self)
       colName = CCI_GET_RESULT_INFO_NAME (self->col_info, i);
       precision = CCI_GET_RESULT_INFO_PRECISION (self->col_info, i);
       scale = CCI_GET_RESULT_INFO_SCALE (self->col_info, i);
-      nullable =
-	(CCI_GET_RESULT_INFO_IS_NON_NULL (self->col_info, i)) ? 0 : 1;
+      nullable = CCI_GET_RESULT_INFO_IS_NON_NULL (self->col_info, i);
       datatype = CCI_GET_RESULT_INFO_TYPE (self->col_info, i);
 
       PyTuple_SetItem (item, 0, _cubrid_return_PyString_FromString (colName));
@@ -1862,7 +1687,8 @@ _cubrid_CursorObject_set_description (_cubrid_CursorObject * self)
   return 1;
 }
 
-static char _cubrid_CursorObject_result_info__doc__[] = "result_info(n)\n\
+static char _cubrid_CursorObject_result_info__doc__[] =
+"result_info(n)\n\
 returns a sequence of 15-item sequences.\n\
 Each of these sequence contails information describing one result column::\n\
  (datatype,\n\
@@ -1927,10 +1753,6 @@ _cubrid_CursorObject_result_info (_cubrid_CursorObject * self,
   PyObject *result, *item;
   int i, j, n = 0, len = 0;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "|i", &n))
     {
       return NULL;
@@ -1965,7 +1787,7 @@ _cubrid_CursorObject_result_info (_cubrid_CursorObject * self,
       char *col_name = NULL, *real_attr = NULL;
       char *class_name = NULL, *default_value = NULL;
       int type, precision, scale, not_null, auto_increment, unique_key,
-	primary_key, foreign_key, reverse_index, resverse_unique, shared;
+        primary_key, foreign_key, reverse_index, resverse_unique, shared;
 
       item = PyTuple_New (15);
 
@@ -1977,38 +1799,28 @@ _cubrid_CursorObject_result_info (_cubrid_CursorObject * self,
       real_attr = CCI_GET_RESULT_INFO_ATTR_NAME (self->col_info, i);
       class_name = CCI_GET_RESULT_INFO_CLASS_NAME (self->col_info, i);
       default_value = CCI_GET_RESULT_INFO_DEFAULT_VALUE (self->col_info, i);
-      auto_increment =
-	CCI_GET_RESULT_INFO_IS_AUTO_INCREMENT (self->col_info, i);
+      auto_increment = CCI_GET_RESULT_INFO_IS_AUTO_INCREMENT (self->col_info, i);
       unique_key = CCI_GET_RESULT_INFO_IS_UNIQUE_KEY (self->col_info, i);
       primary_key = CCI_GET_RESULT_INFO_IS_PRIMARY_KEY (self->col_info, i);
       foreign_key = CCI_GET_RESULT_INFO_IS_FOREIGN_KEY (self->col_info, i);
-      reverse_index =
-	CCI_GET_RESULT_INFO_IS_REVERSE_INDEX (self->col_info, i);
-      resverse_unique =
-	CCI_GET_RESULT_INFO_IS_REVERSE_UNIQUE (self->col_info, i);
+      reverse_index = CCI_GET_RESULT_INFO_IS_REVERSE_INDEX (self->col_info, i);
+      resverse_unique = CCI_GET_RESULT_INFO_IS_REVERSE_UNIQUE (self->col_info, i);
       shared = CCI_GET_RESULT_INFO_IS_SHARED (self->col_info, i);
 
       PyTuple_SetItem (item, 0, _cubrid_return_PyInt_FromLong (type));
       PyTuple_SetItem (item, 1, _cubrid_return_PyInt_FromLong (not_null));
       PyTuple_SetItem (item, 2, _cubrid_return_PyInt_FromLong (scale));
       PyTuple_SetItem (item, 3, _cubrid_return_PyInt_FromLong (precision));
-      PyTuple_SetItem (item, 4,
-		       _cubrid_return_PyString_FromString (col_name));
-      PyTuple_SetItem (item, 5,
-		       _cubrid_return_PyString_FromString (real_attr));
-      PyTuple_SetItem (item, 6,
-		       _cubrid_return_PyString_FromString (class_name));
-      PyTuple_SetItem (item, 7,
-		       _cubrid_return_PyString_FromString (default_value));
-      PyTuple_SetItem (item, 8,
-		       _cubrid_return_PyInt_FromLong (auto_increment));
+      PyTuple_SetItem (item, 4, _cubrid_return_PyString_FromString (col_name));
+      PyTuple_SetItem (item, 5, _cubrid_return_PyString_FromString (real_attr));
+      PyTuple_SetItem (item, 6, _cubrid_return_PyString_FromString (class_name));
+      PyTuple_SetItem (item, 7, _cubrid_return_PyString_FromString (default_value));
+      PyTuple_SetItem (item, 8, _cubrid_return_PyInt_FromLong (auto_increment));
       PyTuple_SetItem (item, 9, _cubrid_return_PyInt_FromLong (unique_key));
       PyTuple_SetItem (item, 10, _cubrid_return_PyInt_FromLong (primary_key));
       PyTuple_SetItem (item, 11, _cubrid_return_PyInt_FromLong (foreign_key));
-      PyTuple_SetItem (item, 12,
-		       _cubrid_return_PyInt_FromLong (reverse_index));
-      PyTuple_SetItem (item, 13,
-		       _cubrid_return_PyInt_FromLong (resverse_unique));
+      PyTuple_SetItem (item, 12, _cubrid_return_PyInt_FromLong (reverse_index));
+      PyTuple_SetItem (item, 13, _cubrid_return_PyInt_FromLong (resverse_unique));
       PyTuple_SetItem (item, 14, _cubrid_return_PyInt_FromLong (shared));
 
       PyTuple_SetItem (result, j, item);
@@ -2018,7 +1830,7 @@ _cubrid_CursorObject_result_info (_cubrid_CursorObject * self,
 }
 
 static char _cubrid_CursorObject_execute__doc__[] =
-  "execute([option[,max_col_size]])\n\
+"execute([option[,max_col_size]])\n\
 Executes a prepared Query.\n\
 A option can be used when retrieving the query result from the server.\n\
 A option can be classified as synchronous or asynchronous. \n\
@@ -2065,10 +1877,6 @@ _cubrid_CursorObject_execute (_cubrid_CursorObject * self, PyObject * args)
   T_CCI_SQLX_CMD res_sql_type;
   int res_col_count;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "|ii", &option, &max_col_size))
     {
       return NULL;
@@ -2141,57 +1949,50 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
   char *buffer;
   int num;
   T_CCI_DATE dt;
-  char *str_buffer;
+  char* str_buffer;
   int len;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   switch (type)
     {
-    case CCI_U_TYPE_BIT:	//CCI_A_TYPE_BIT
-      res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
-      if (res < 0)
-	{
-	  return handle_error (res, NULL);
-	}
-      if (ind < 0)
-	{
-	  Py_INCREF (Py_None);
-	  val = Py_None;
-	}
-      else
-	{
-	  len = strlen (buffer);
-	  str_buffer = (char *) malloc (len + 1);
-	  if (str_buffer == NULL)
-	    {
-	      Py_INCREF (Py_None);
-	      return Py_None;
-	    }
-	  memset (str_buffer, 0, len + 1);
-	  memcpy (str_buffer, buffer, len);
-	  /*while(str_buffer[len-1] == '0' && len>1)
-	     {
-	     str_buffer[len-1]='\0';
-	     len--;
-	     } */
-	  if (self->charset != NULL && *(self->charset) != '\0')
-	    {
-	      val =
-		_cubrid_return_PyUnicode_FromString (str_buffer,
-						     strlen (str_buffer),
-						     self->charset, NULL);
-	    }
-	  else
-	    {
-	      val = _cubrid_return_PyString_FromString (str_buffer);
-	    }
-	  free (str_buffer);
-	}
-
-      break;
+    	case CCI_U_TYPE_BIT://CCI_A_TYPE_BIT
+         res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
+          if (res < 0)
+        {
+          return handle_error (res, NULL);
+        }
+          if (ind < 0)
+        {
+          Py_INCREF (Py_None);
+          val = Py_None;
+        }
+          else
+        {
+  		len = strlen(buffer);
+		str_buffer = (char*)malloc(len+1);
+              if(str_buffer == NULL)
+             {
+       	  Py_INCREF (Py_None);
+    	         return Py_None;              
+             }
+              memset(str_buffer,0,len+1);
+              memcpy(str_buffer,buffer,len);      
+              /*while(str_buffer[len-1] == '0' && len>1)
+              {
+                str_buffer[len-1]='\0';
+                len--;
+              }*/
+              if (self->charset != NULL && *(self->charset) != '\0')
+                {
+                  val = _cubrid_return_PyUnicode_FromString (str_buffer, strlen(str_buffer), self->charset, NULL);
+                }
+              else
+                {
+                  val = _cubrid_return_PyString_FromString (str_buffer);
+                }
+                free(str_buffer);
+        }
+	 
+	  break;	
     case CCI_U_TYPE_INT:
     case CCI_U_TYPE_SHORT:
       res = cci_get_data (self->handle, index, CCI_A_TYPE_INT, &num, &ind);
@@ -2231,94 +2032,90 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
 #endif
 	  Py_DECREF (tmpval);
 	}
-      break;
+	  break;
     case CCI_U_TYPE_NUMERIC:
-      res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
-      if (res < 0)
+	  res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
+	  if (res < 0) 
 	{
-	  return handle_error (res, NULL);
+	   return handle_error (res, NULL);
 	}
-      if (ind < 0)
+	  if (ind < 0) 
 	{
 	  Py_INCREF (Py_None);
 	  val = Py_None;
 	}
-      else
+	  else
 	{
 	  tmpval = PyTuple_New (1);
 	  PyTuple_SetItem (tmpval, 0, Py_BuildValue ("s", buffer));
-	  val = PyObject_CallObject (_func_Decimal, tmpval);
+	  val = PyObject_CallObject(_func_Decimal, tmpval);
 	  Py_DECREF (tmpval);
 	}
-      break;
+	  break;
     case CCI_U_TYPE_DATE:
-      res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
-      if (res < 0)
+	  res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
+	  if (res < 0)
 	{
 	  return handle_error (res, NULL);
 	}
-      if (ind < 0)
+	  if (ind < 0)
 	{
 	  Py_INCREF (Py_None);
 	  val = Py_None;
 	}
-      else
+	  else
 	{
 	  val = PyDate_FromDate (dt.yr, dt.mon, dt.day);
 	}
-      break;
+	  break;
     case CCI_U_TYPE_TIME:
-      res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
-      if (res < 0)
+	  res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
+	  if (res < 0)
 	{
 	  return handle_error (res, NULL);
 	}
-      if (ind < 0)
+	  if (ind < 0)
 	{
 	  Py_INCREF (Py_None);
 	  val = Py_None;
 	}
-      else
+	  else
 	{
 	  val = PyTime_FromTime (dt.hh, dt.mm, dt.ss, 0);
 	}
-      break;
+	  break;
     case CCI_U_TYPE_DATETIME:
-      res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
-      if (res < 0)
+	  res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
+	  if (res < 0)
 	{
 	  return handle_error (res, NULL);
 	}
-      if (ind < 0)
+	  if (ind < 0)
 	{
 	  Py_INCREF (Py_None);
 	  val = Py_None;
 	}
-      else
+	  else
 	{
-	  val =
-	    PyDateTime_FromDateAndTime (dt.yr, dt.mon, dt.day, dt.hh, dt.mm,
-					dt.ss, dt.ms * 1000);
+	  val = PyDateTime_FromDateAndTime (dt.yr, dt.mon, dt.day, dt.hh, dt.mm, dt.ss, dt.ms * 1000);
 	}
-      break;
+	  break;
     case CCI_U_TYPE_TIMESTAMP:
-      res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
-      if (res < 0)
+	  res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
+	  if (res < 0)
 	{
 	  return handle_error (res, NULL);
 	}
-      if (ind < 0)
+	  if (ind < 0)
 	{
 	  Py_INCREF (Py_None);
 	  val = Py_None;
 	}
-      else
+	  else
 	{
-	  val =
-	    PyDateTime_FromDateAndTime (dt.yr, dt.mon, dt.day, dt.hh, dt.mm,
-					dt.ss, 0);
+	  val = PyDateTime_FromDateAndTime (dt.yr, dt.mon, dt.day, dt.hh, dt.mm, dt.ss, 0);
 	}
-      break;
+	  break;
     default:
       res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
       if (res < 0)
@@ -2332,16 +2129,14 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
 	}
       else
 	{
-	  if (self->charset != NULL && *(self->charset) != '\0')
-	    {
-	      val =
-		_cubrid_return_PyUnicode_FromString (buffer, strlen (buffer),
-						     self->charset, NULL);
-	    }
-	  else
-	    {
-	      val = _cubrid_return_PyString_FromString (buffer);
-	    }
+          if (self->charset != NULL && *(self->charset) != '\0')
+            {
+              val = _cubrid_return_PyUnicode_FromString (buffer, strlen(buffer), self->charset, NULL);
+            }
+          else
+            {
+              val = _cubrid_return_PyString_FromString (buffer);
+            }
 	}
       break;
     }
@@ -2363,10 +2158,6 @@ _cubrid_CursorObject_dbset_to_pyvalue (_cubrid_CursorObject * self, int index)
   PyObject *e;
   char *buffer;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   res = cci_get_data (self->handle, index, CCI_A_TYPE_SET, &set, &ind);
   if (res < 0)
     {
@@ -2404,10 +2195,6 @@ _cubrid_row_to_tuple (_cubrid_CursorObject * self)
   int i, type;
   PyObject *row, *val;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   row = PyList_New (self->col_count);
 
   for (i = 0; i < self->col_count; i++)
@@ -2434,10 +2221,6 @@ _cubrid_row_to_dict (_cubrid_CursorObject * self)
   PyObject *row, *val;
   int i, type;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!(row = PyDict_New ()))
     {
       return NULL;
@@ -2445,7 +2228,7 @@ _cubrid_row_to_dict (_cubrid_CursorObject * self)
 
   for (i = 0; i < self->col_count; i++)
     {
-      char *col_name = CCI_GET_RESULT_INFO_NAME (self->col_info, i + 1);
+      char *col_name = CCI_GET_RESULT_INFO_NAME(self->col_info, i + 1);
 
       type = CCI_GET_RESULT_INFO_TYPE (self->col_info, i + 1);
 
@@ -2457,13 +2240,14 @@ _cubrid_row_to_dict (_cubrid_CursorObject * self)
 	{
 	  val = _cubrid_CursorObject_dbval_to_pyvalue (self, type, i + 1);
 	}
-      PyMapping_SetItemString (row, col_name, val);
+      PyMapping_SetItemString(row, col_name, val);
     }
 
   return row;
 }
 
-static char _cubrid_CursorObject_fetch__doc__[] = "fetch_row()\n\
+static char _cubrid_CursorObject_fetch__doc__[] =
+"fetch_row()\n\
 get a single row from the query result. The cursor automatically moves\n\
 to the next row after getting the result.\n\
 \n\
@@ -2487,10 +2271,6 @@ _cubrid_CursorObject_fetch (_cubrid_CursorObject * self, PyObject * args)
   T_CCI_ERROR error;
   PyObject *row;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "|i", &how))
     {
       return NULL;
@@ -2498,7 +2278,7 @@ _cubrid_CursorObject_fetch (_cubrid_CursorObject * self, PyObject * args)
 
   if (how < 0 || how > 1)
     {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
+      return handle_error(CUBRID_ER_INVALID_PARAM, NULL);
     }
 
   res = cci_cursor (self->handle, 0, CCI_CURSOR_CURRENT, &error);
@@ -2538,7 +2318,8 @@ _cubrid_CursorObject_fetch (_cubrid_CursorObject * self, PyObject * args)
   return row;
 }
 
-static char _cubrid_CursorObject_fetch_lob__doc__[] = "fetch_lob(col, lob)\n\
+static char _cubrid_CursorObject_fetch_lob__doc__[] =
+"fetch_lob(col, lob)\n\
 get BLOB/CLOB data out from the database server. You need to specify\n\
 which column is lob type.\n\
 \n\
@@ -2565,10 +2346,6 @@ _cubrid_CursorObject_fetch_lob (_cubrid_CursorObject * self, PyObject * args)
   int col = 1, res, ind;
   T_CCI_ERROR error;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "iO!", &col, &_cubrid_LobObject_type, &lob))
     {
       return NULL;
@@ -2626,7 +2403,8 @@ _cubrid_CursorObject_fetch_lob (_cubrid_CursorObject * self, PyObject * args)
   return Py_None;
 }
 
-static char _cubrid_CursorObject_affected_rows__doc__[] = "affected_rows()\n\
+static char _cubrid_CursorObject_affected_rows__doc__[] =
+"affected_rows()\n\
 get the number of rows affected by the SQL sentence (INSERT,\n\
 DELETE, UPDATE).\n\
 \n\
@@ -2640,10 +2418,6 @@ _cubrid_CursorObject_affected_rows (_cubrid_CursorObject * self,
 {
   int affected_rows;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, ""))
     {
       return NULL;
@@ -2664,7 +2438,8 @@ _cubrid_CursorObject_affected_rows (_cubrid_CursorObject * self,
   return _cubrid_return_PyInt_FromLong (affected_rows);
 }
 
-static char _cubrid_CursorObject_data_seek__doc__[] = "data_seek(n)\n\
+static char _cubrid_CursorObject_data_seek__doc__[] =
+"data_seek(n)\n\
 move the cursor based on the original position.\n\
 \n\
 offset: int, number of units you want to move the cursor.";
@@ -2676,10 +2451,6 @@ _cubrid_CursorObject_data_seek (_cubrid_CursorObject * self, PyObject * args)
   T_CCI_ERROR error;
   int row;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "i", &row))
     {
       return NULL;
@@ -2702,17 +2473,14 @@ _cubrid_CursorObject_data_seek (_cubrid_CursorObject * self, PyObject * args)
   return Py_None;
 }
 
-static char _cubrid_CursorObject_num_fields__doc__[] = "num_fields()\n\
+static char _cubrid_CursorObject_num_fields__doc__[] =
+"num_fields()\n\
 get the number of columns from the query result. It can\n\
 only be used when the query executed is a select sentence.\n";
 
 static PyObject *
 _cubrid_CursorObject_num_fields (_cubrid_CursorObject * self, PyObject * args)
 {
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, ""))
     {
       return NULL;
@@ -2727,17 +2495,14 @@ _cubrid_CursorObject_num_fields (_cubrid_CursorObject * self, PyObject * args)
   return Py_None;
 }
 
-static char _cubrid_CursorObject_num_rows__doc__[] = "num_rows()\n\
+static char _cubrid_CursorObject_num_rows__doc__[] =
+"num_rows()\n\
 get the number of rows from the query result. It can\n\
 only be used when the query executed is a select sentence.\n";
 
 static PyObject *
 _cubrid_CursorObject_num_rows (_cubrid_CursorObject * self, PyObject * args)
 {
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, ""))
     {
       return NULL;
@@ -2753,15 +2518,11 @@ _cubrid_CursorObject_num_rows (_cubrid_CursorObject * self, PyObject * args)
 }
 
 static char _cubrid_CursorObject_row_tell__doc__[] =
-  "get the current position of the cursor.";
+"get the current position of the cursor.";
 
 static PyObject *
 _cubrid_CursorObject_row_tell (_cubrid_CursorObject * self, PyObject * args)
 {
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, ""))
     {
       return NULL;
@@ -2775,7 +2536,8 @@ _cubrid_CursorObject_row_tell (_cubrid_CursorObject * self, PyObject * args)
   return _cubrid_return_PyInt_FromLong (self->cursor_pos);
 }
 
-static char _cubrid_CursorObject_row_seek__doc__[] = "row_seek(offset)\n\
+static char _cubrid_CursorObject_row_seek__doc__[] =
+"row_seek(offset)\n\
 move the current cursor based on current cursor\n\
 position. If give a positive number, it will move forward.\n\
 If you give a negative number, it will move back.\n\
@@ -2788,10 +2550,6 @@ _cubrid_CursorObject_row_seek (_cubrid_CursorObject * self, PyObject * args)
   int offset, res;
   T_CCI_ERROR error;
 
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, "i", &offset))
     {
       return NULL;
@@ -2809,7 +2567,8 @@ _cubrid_CursorObject_row_seek (_cubrid_CursorObject * self, PyObject * args)
   return Py_None;
 }
 
-static char _cubrid_CursorObject_next_result__doc__[] = "next_result()\n\
+static char _cubrid_CursorObject_next_result__doc__[] =
+"next_result()\n\
 get results of next query if CUBRID_EXEC_QUERY_ALL\n\
 flag is set upon execute(). If next result is executed successfully,\n\
 the database is updated with the information of the current query.";
@@ -2822,11 +2581,6 @@ _cubrid_CursorObject_next_result (_cubrid_CursorObject * self,
   T_CCI_ERROR error;
   T_CCI_COL_INFO *res_col_info;
   T_CCI_SQLX_CMD res_sql_type;
-
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, ""))
     {
       return NULL;
@@ -2901,17 +2655,12 @@ static char _cubrid_CursorObject_close__doc__[] =
 static PyObject *
 _cubrid_CursorObject_close (_cubrid_CursorObject * self, PyObject * args)
 {
-  if (self->state == CURSOR_STATE_CLOSED)
-    {
-      return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
-    }
   if (!PyArg_ParseTuple (args, ""))
     {
       return NULL;
     }
 
   _cubrid_CursorObject_reset (self);
-  self->state = CURSOR_STATE_CLOSED;
   Py_INCREF (Py_None);
   return Py_None;
 }
@@ -2958,7 +2707,8 @@ _cubrid_LobObject_init (_cubrid_LobObject * self, PyObject * args,
   return 0;
 }
 
-static char _cubrid_LobObject_close__doc__[] = "close() -- Close the lob";
+static char _cubrid_LobObject_close__doc__[] =
+"close() -- Close the lob";
 
 static PyObject *
 _cubrid_LobObject_close (_cubrid_LobObject * self, PyObject * args)
@@ -3026,7 +2776,8 @@ _cubrid_LobObject_cci_lob_size (_cubrid_LobObject * self)
     cci_blob_size (self->blob) : cci_clob_size (self->clob);
 }
 
-static char _cubrid_LobObject_import__doc__[] = "imports(file[, type])\n\
+static char _cubrid_LobObject_import__doc__[] =
+"imports(file[, type])\n\
 imports file in CUBRID server.\n\
 If not give the type, it will be processed as BLOB.\n";
 
@@ -3096,7 +2847,8 @@ _cubrid_LobObject_import (_cubrid_LobObject * self, PyObject * args)
 }
 
 
-static char _cubrid_LobObject_write__doc__[] = "write(string)\n\
+static char _cubrid_LobObject_write__doc__[] =
+"write(string)\n\
 writes a string to the large object.If LOB object does not exist.\n\
 It will be create a BLOB object as default.\n\
 \n\
@@ -3143,11 +2895,11 @@ _cubrid_LobObject_write (_cubrid_LobObject * self, PyObject * args)
   if (self->blob == NULL && self->clob == NULL)
     {
       if (type == NULL)
-	{
+        {
 	  _cubrid_LobObject_create (self, CUBRID_BLOB);
-	}
+        }
       else
-	{
+        {
 	  type_len = (int) strlen (type);
 	  if (type_len > 1)
 	    {
@@ -3155,7 +2907,7 @@ _cubrid_LobObject_write (_cubrid_LobObject * self, PyObject * args)
 	    }
 
 	  _cubrid_LobObject_create (self, *type);
-	}
+        }
     }
 
   res = _cubrid_LobObject_cci_write (self, self->pos, len, buf, &error);
@@ -3179,7 +2931,8 @@ _cubrid_LobObject_cci_read (_cubrid_LobObject * self, CUBRID_LONG_LONG pos,
     cci_clob_read (self->connection, self->clob, pos, size, buf, error);
 }
 
-static char _cubrid_LobObject_export__doc__[] = "export(file)\n\
+static char _cubrid_LobObject_export__doc__[] =
+"export(file)\n\
 export BLOB/CLOB data to the specified file. To use this function, you must\n\
 use fetch_lob() in cursor class first to get BLOB/CLOB info from CUBRID.\n\
 \n\
@@ -3254,7 +3007,8 @@ _cubrid_LobObject_export (_cubrid_LobObject * self, PyObject * args)
   return Py_None;
 }
 
-static char _cubrid_LobObject_read__doc__[] = "read(len)\n\
+static char _cubrid_LobObject_read__doc__[] =
+"read(len)\n\
 read a chunk of data from the current file position.\n\
 If not given the length, it will read all the remaining data.\n\
 \n\
@@ -3338,7 +3092,8 @@ _cubrid_LobObject_read (_cubrid_LobObject * self, PyObject * args)
   return ret;
 }
 
-static char _cubrid_LobObject_seek__doc__[] = "seek(offset[, whence])\n\
+static char _cubrid_LobObject_seek__doc__[] =
+"seek(offset[, whence])\n\
 move the LOB object current position to the direction LOB object\n\
 according to the mode whence giving.\n\
 The argument whence can be the following values:\n\
@@ -3393,7 +3148,6 @@ _cubrid_LobObject_dealloc (_cubrid_LobObject * self)
   _cubrid_LobObject_close (self, NULL);
   Py_TYPE (self)->tp_free ((PyObject *) self);
 }
-
 static int
 _cubrid_SetObject_init (_cubrid_SetObject * self, PyObject * args,
 			PyObject * kwargs)
@@ -3406,7 +3160,7 @@ _cubrid_SetObject_init (_cubrid_SetObject * self, PyObject * args,
     }
 
   self->connection = conn->handle;
-  self->data = NULL;
+  self->data= NULL;
   self->type = CCI_U_TYPE_STRING;
 
   return 0;
@@ -3434,163 +3188,201 @@ _cubrid_SetObject_dealloc (_cubrid_SetObject * self)
   Py_TYPE (self)->tp_free ((PyObject *) self);
 }
 
-static char *
-_cubrid_str2bit (char *str)
+static char* _cubrid_dup_buf(char* src_buf,int size)
 {
-  int i = 0, len = 0, t = 0;
-  char *buf = NULL;
-  int shift = 8;
+    int len=0;
+    char* temp_buf=NULL;
 
-  if (str == NULL)
-    return NULL;
-  len = strlen (str);
-
-  if (0 == len % shift)
-    t = 1;
-
-  buf = (char *) malloc (len / shift + 1 + 1);
-  memset (buf, 0, len / shift + 1 + 1);
-
-  for (i = 0; i < len; i++)
+    if(src_buf != NULL)
     {
-      if (str[len - i - 1] == '1')
-	{
-	  buf[len / shift - i / shift - t] |= (1 << (i % shift));
-	}
-      else if (str[len - i - 1] == '0')
-	{
-	  //nothing
-	}
-      else
-	{
-	  return NULL;
-	}
+        len = strlen(src_buf);
     }
-  return buf;
+    else
+    {
+        len =size;
+    }
+    if(len<=0)
+    {
+        return NULL;
+    }
+    temp_buf = (char*)malloc(len+1);
+    if(NULL==temp_buf)
+    {
+      return NULL;
+    }
+    memset(temp_buf,0,len+1);
+    if(NULL!= src_buf)
+        memcpy(temp_buf,src_buf,len);   
+
+    return temp_buf;
+}
+
+static char* _cubrid_get_data_buf(int type,int num)
+{
+    switch(type)
+    {
+        case CCI_U_TYPE_BIT:
+        case CCI_U_TYPE_VARBIT:      
+           return  _cubrid_dup_buf(NULL,sizeof(T_CCI_BIT)* (num+1));   
+        default:
+           return  _cubrid_dup_buf(NULL,sizeof(void*)* (num+1));
+    } 
+}
+static char* _cubrid_str2bit(char* str)
+{
+   int i=0,len=0,t=0;
+    char* buf=NULL;
+    int shift = 8;
+
+    if(str == NULL)
+        return NULL;
+    len = strlen(str);
+
+    if(0 == len%shift)
+        t =1;
+
+    buf = (char*)malloc(len/shift+1+1);
+    memset(buf,0,len/shift+1+1);
+
+    for(i=0;i<len;i++)
+    {
+        if(str[len-i-1] == '1')
+        {
+            buf[len/shift - i/shift-t] |= (1<<(i%shift)); 
+        }
+        else if(str[len-i-1] == '0')
+        {
+        	//nothing
+        }
+        else
+        {
+            return NULL;
+        }
+    }
+    return buf;
 }
 
 static PyObject *
-_cubrid_SetObject_import (_cubrid_SetObject * self, PyObject * args)
+_cubrid_SetObject_import(_cubrid_SetObject * self, PyObject * args)
 {
-  char **data = NULL, **potinter = NULL;
-  int *indicator = NULL;
-  int i = 0, type, num = 1;
-  T_CCI_SET set;
-  int err_code = 0;
-  char *temp_data_char;
-  T_CCI_BIT *pBit = NULL;
+    char** data=NULL,**potinter=NULL;
+    int* indicator= NULL; 
+    int i =0,type,num=1;
+    T_CCI_SET set;
+    int err_code=0;
+    char* temp_data_char;
+    T_CCI_BIT* pBit=NULL;    
 
-  PyObject *pTube;
-  PyObject *pValue;
+    PyObject* pTube;
+    PyObject *pValue;
 
-  if (!PyArg_ParseTuple (args, "Oi", &pTube, &type))
+    if (!PyArg_ParseTuple (args, "Oi", &pTube,&type))
     {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
+        return handle_error (CUBRID_ER_INVALID_PARAM, NULL); 
     }
 
-  if (!PyTuple_Check (pTube))
+    if(!PyTuple_Check(pTube))
     {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
+        return handle_error (CUBRID_ER_INVALID_PARAM, NULL);  
     }
-  num = PyTuple_GET_SIZE (pTube);
-  data = (char **) _cubrid_get_data_buf (type, num + 1);
-  potinter = (char **) _cubrid_get_data_buf (type, num + 1);
-  indicator = (int *) _cubrid_dup_buf (NULL, sizeof (int) * (num + 1));
+    num = PyTuple_GET_SIZE(pTube);
+    data = (char**)_cubrid_get_data_buf(type,num+1);
+    potinter = (char**)_cubrid_get_data_buf(type,num+1);
+    indicator  = (int*)_cubrid_dup_buf(NULL,sizeof(int)* (num+1));
 
-
-  for (i = 0; i < num; ++i)
+    
+    for(i = 0; i < num; ++i) 
     {
-      pValue = PyTuple_GET_ITEM (pTube, i);
-      potinter[i] = PyString_AsString (pValue);
-
-      if (potinter[i] == NULL || (strlen (potinter[i]) == 0))
-	{
-	  return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
-	}
-
-      if (strcmp (potinter[i], "NULL") == 0)
-	{
-	  indicator[i] = 1;
-	}
+      pValue = PyTuple_GET_ITEM(pTube,i);
+      potinter[i]=PyString_AsString(pValue);
+ 
+      if(potinter[i] == NULL||(strlen(potinter[i])==0))
+      {
+        return handle_error (CUBRID_ER_INVALID_PARAM, NULL);  
+      }
+            
+      if(strcmp(potinter[i],"NULL")==0)
+      {
+        indicator[i]=1;
+      }
     }
 
 
-  if (NULL == indicator || NULL == data)
+    if(NULL==indicator||NULL==data)
     {
       return handle_error (CUBRID_ER_NO_MORE_MEMORY, NULL);
     }
 
-  switch (type)
-    {
-    case CCI_U_TYPE_BIT:
-    case CCI_U_TYPE_VARBIT:
-      for (i = 0; i < num; i++)
-	{
-	  if (indicator[i] == 1)
-	    continue;
-	  temp_data_char = _cubrid_str2bit ((char *) potinter[i]);
-	  if (temp_data_char == NULL)
-	    {
-	      goto handle_error;
-	    }
-	  pBit = (T_CCI_BIT *) data;
-	  pBit[i].buf = temp_data_char;
-	  pBit[i].size = strlen ((char *) potinter[i]) / 8 + 1;
-	}
+    switch(type)
+    {    
+      case CCI_U_TYPE_BIT:
+      case CCI_U_TYPE_VARBIT:  
+        for(i=0;i<num;i++)
+        {
+          if(indicator[i]==1)
+            continue;           
+          temp_data_char =  _cubrid_str2bit((char*)potinter[i]);
+          if(temp_data_char == NULL)
+          {
+            goto handle_error;
+          }
+          pBit = (T_CCI_BIT*)data;
+          pBit[i].buf = temp_data_char;
+          pBit[i].size = strlen((char*)potinter[i])/8+1;
+        }           
       break;
-    default:
-      err_code =
-	cci_set_make (&set, CCI_U_TYPE_STRING, num, potinter,
-		      (int *) indicator);
-      if (err_code < 0)
-	{
-	  goto handle_error;
-	}
-      self->data = set;
-      Py_INCREF (Py_None);
-      free (data);
-      free (indicator);
-      free (potinter);
-      return Py_None;
+      default:
+          err_code =  cci_set_make(&set, CCI_U_TYPE_STRING, num, potinter, (int*)indicator);
+          if(err_code <0)
+          {
+            goto handle_error;
+          }
+          self->data = set;
+          Py_INCREF (Py_None);
+          free(data);
+          free(indicator);
+          free(potinter);
+          return Py_None;
     }
 
-  err_code = cci_set_make (&set, type, num, data, (int *) indicator);
-  if (err_code < 0)
+    err_code =  cci_set_make(&set, type, num, data, (int*)indicator);
+    if(err_code <0)
     {
-      goto handle_error;
+        goto handle_error;
     }
-  self->data = set;
+    self->data = set;
 
-  pBit = (T_CCI_BIT *) data;
-  switch (type)
+    pBit = (T_CCI_BIT*)data;
+    switch(type)
     {
-    case CCI_U_TYPE_BIT:
-    case CCI_U_TYPE_VARBIT:
-      for (i = 0; i < num; i++)
-	{
-	  if (indicator[i] == 1)
-	    continue;
-	  if (pBit != NULL && pBit[i].buf != NULL)
-	    {
-	      free (pBit[i].buf);
-	    }
-	}
+      case CCI_U_TYPE_BIT:
+      case CCI_U_TYPE_VARBIT:        
+        for(i=0;i<num;i++)
+      {  
+          if(indicator[i]==1)
+             continue;      
+          if(pBit!= NULL && pBit[i].buf != NULL)
+          {
+              free(pBit[i].buf );
+          }
+       }    
     }
 
-  Py_INCREF (Py_None);
-  free (data);
-  free (indicator);
-  free (potinter);
-  return Py_None;
+    Py_INCREF (Py_None);
+    free(data);
+    free(indicator);
+    free(potinter);
+    return Py_None;
 
-handle_error:
-  free (data);
-  free (indicator);
-  free (potinter);
-  return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
+handle_error:    
+    free(data);
+    free(indicator);
+    free(potinter);
+    return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
 }
 
-static char _cubrid_SetObject_import__doc__[] = "imports(data,type)\n\
+static char _cubrid_SetObject_import__doc__[] =
+"imports(data,type)\n\
 imports LIST/SET/MULTISET data. To use this function.\n\
 data:tuple object\n\
 type:Element type of set,default type:string.\n\
@@ -3785,11 +3577,11 @@ static PyMethodDef _cubrid_CursorObject_methods[] = {
    (PyCFunction) _cubrid_CursorObject_bind_lob,
    METH_VARARGS,
    _cubrid_CursorObject_bind_lob__doc__},
-  {
-   "bind_set",
-   (PyCFunction) _cubrid_CursorObject_bind_Set,
-   METH_VARARGS,
-   _cubrid_CursorObject_bind_set__doc__},
+   {
+    "bind_set",
+    (PyCFunction) _cubrid_CursorObject_bind_Set,
+    METH_VARARGS,
+    _cubrid_CursorObject_bind_set__doc__},
   {
    "execute",
    (PyCFunction) _cubrid_CursorObject_execute,
@@ -3864,7 +3656,7 @@ static PyMethodDef _cubrid_ConnectionObject_methods[] = {
    (PyCFunction) _cubrid_ConnectionObject_lob,
    METH_VARARGS,
    _cubrid_ConnectionObject_lob__doc__},
-  {
+   {
    "set",
    (PyCFunction) _cubrid_ConnectionObject_set,
    METH_VARARGS,
@@ -3919,16 +3711,11 @@ static PyMethodDef _cubrid_ConnectionObject_methods[] = {
    (PyCFunction) _cubrid_ConnectionObject_escape_string,
    METH_VARARGS,
    _cubrid_ConnectionObject_escape_string__doc__},
-  {
-   "batch_execute",
-   (PyCFunction) _cubrid_ConnectionObject_batch_execute,
-   METH_VARARGS,
-   _cubrid_ConnectionObject_batch_execute__doc__},
   {NULL, NULL}
 };
 
 static char _cubrid_ConnectionObject__doc__[] =
-  "Returns a CUBRID connection object.";
+"Returns a CUBRID connection object.";
 
 static char _cubrid_CursorObject__doc__[] = "Cursor class.";
 
@@ -4108,7 +3895,7 @@ PyTypeObject _cubrid_CursorObject_type = {
   0,				/* tp_free */
 };
 
-#define _CUBRID_VERSION_	"10.0.0.0001"
+#define _CUBRID_VERSION_	"9.2.0.0001"
 static char _cubrid_doc[] = "CUBRID API Module for Python";
 
 #if PY_MAJOR_VERSION >= 3
@@ -4125,26 +3912,11 @@ static struct PyModuleDef cubriddef = {
 };
 #endif
 
-/*
- *  pep-0249 Error inheritance layout
- *
- *  StandardError
- *  |__Warning
- *  |__Error
- *     |__InterfaceError
- *     |__DatabaseError
- *        |__DataError
- *        |__OperationalError
- *        |__IntegrityError
- *        |__InternalError
- *        |__ProgrammingError
- *        |__NotSupportedError
- *
- */
 void
 init_exceptions (PyObject * dict)
 {
-  _cubrid_error = PyErr_NewException ("_cubrid.Error", PyExc_Exception, NULL);
+  _cubrid_error =
+    PyErr_NewException ("_cubrid.Error", PyExc_Exception, NULL);
   PyDict_SetItemString (dict, "Error", _cubrid_error);
 
   _cubrid_interface_error =
@@ -4155,35 +3927,9 @@ init_exceptions (PyObject * dict)
     PyErr_NewException ("_cubrid.DatabaseError", _cubrid_error, NULL);
   PyDict_SetItemString (dict, "DatabaseError", _cubrid_database_error);
 
-  _cubrid_data_error =
-    PyErr_NewException ("_cubrid.DataError", _cubrid_database_error, NULL);
-  PyDict_SetItemString (dict, "DataError", _cubrid_data_error);
-
-  _cubrid_operational_error =
-    PyErr_NewException ("_cubrid.OperationalError", _cubrid_database_error,
-			NULL);
-  PyDict_SetItemString (dict, "OperationalError", _cubrid_operational_error);
-
-  _cubrid_integrity_error =
-    PyErr_NewException ("_cubrid.IntegrityError", _cubrid_database_error,
-			NULL);
-  PyDict_SetItemString (dict, "IntegrityError", _cubrid_integrity_error);
-
-  _cubrid_internal_error =
-    PyErr_NewException ("_cubrid.InternalError", _cubrid_database_error,
-			NULL);
-  PyDict_SetItemString (dict, "InternalError", _cubrid_internal_error);
-
-  _cubrid_programming_error =
-    PyErr_NewException ("_cubrid.ProgrammingError", _cubrid_database_error,
-			NULL);
-  PyDict_SetItemString (dict, "ProgrammingError", _cubrid_programming_error);
-
   _cubrid_not_supported_error =
-    PyErr_NewException ("_cubrid.NotSupportedError", _cubrid_database_error,
-			NULL);
-  PyDict_SetItemString (dict, "NotSupportedError",
-			_cubrid_not_supported_error);
+    PyErr_NewException ("_cubrid.NotSupportedError", _cubrid_database_error,NULL);
+  PyDict_SetItemString (dict, "NotSupportedError", _cubrid_not_supported_error);
 }
 
 static int
@@ -4216,6 +3962,21 @@ all_ins (PyObject * d)
     return -1;
 
   if (ins (d, "CUBRID_EXEC_THREAD", (long) CUBRID_EXEC_THREAD))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE",
+       (long) TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_COMMIT_CLASS_COMMIT_INSTANCE",
+       (long) TRAN_COMMIT_CLASS_COMMIT_INSTANCE))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_REP_CLASS_UNCOMMIT_INSTANCE",
+       (long) TRAN_REP_CLASS_UNCOMMIT_INSTANCE))
     return -1;
 
   if (ins
@@ -4366,7 +4127,7 @@ init_cubrid (void)
       goto Error;
     }
 
-  if (PyType_Ready (&_cubrid_SetObject_type) < 0)
+    if (PyType_Ready (&_cubrid_SetObject_type) < 0)
     {
       goto Error;
     }
@@ -4378,7 +4139,7 @@ init_cubrid (void)
       goto Error;
     }
 
-  /* import function Decimal from module decimal */
+ /* import function Decimal from module decimal */
   mDecimal = PyImport_ImportModule ("decimal");
   if (!mDecimal)
     {
