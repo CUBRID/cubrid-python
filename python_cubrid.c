@@ -43,6 +43,13 @@ static struct _cubrid_isolation
 } cubrid_isolation[] =
 {
   {
+  TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE,
+      "CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE"},
+  {
+  TRAN_COMMIT_CLASS_COMMIT_INSTANCE, "CUBRID_COMMIT_CLASS_COMMIT_INSTANCE"},
+  {
+  TRAN_REP_CLASS_UNCOMMIT_INSTANCE, "CUBRID_REP_CLASS_UNCOMMIT_INSTANCE"},
+  {
   TRAN_REP_CLASS_COMMIT_INSTANCE, "CUBRID_REP_CLASS_COMMIT_INSTANCE"},
   {
   TRAN_REP_CLASS_REP_INSTANCE, "CUBRID_REP_CLASS_REP_INSTANCE"},
@@ -475,7 +482,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
       return -1;
     }
 
-  if (level - 1 < TRAN_REP_CLASS_COMMIT_INSTANCE
+  if (level - 1 < TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE
       || level - 1 > TRAN_SERIALIZABLE)
     {
       level = TRAN_SERIALIZABLE + 1;
@@ -483,7 +490,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
 
   self->isolation_level =
     _cubrid_return_PyString_FromString (cubrid_isolation
-					[level - 4].isolation);
+					[level - 1].isolation);
   if (autocommit == CCI_AUTOCOMMIT_TRUE)
     {
       self->autocommit = _cubrid_return_PyBool_FromLong (1);
@@ -801,6 +808,9 @@ The level defines the different phenomena can happen in the\n\
 database between concurrent transactions.\n\
 \n\
 isolation_level maybe::\n\
+  CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE\n\
+  CUBRID_COMMIT_CLASS_COMMIT_INSTANCE\n\
+  CUBRID_REP_CLASS_UNCOMMIT_INSTANCE\n\
   CUBRID_REP_CLASS_COMMIT_INSTANCE\n\
   CUBRID_REP_CLASS_REP_INSTANCE\n\
   CUBRID_SERIALIZABLE\n\
@@ -833,7 +843,7 @@ _cubrid_ConnectionObject_set_isolation_level (_cubrid_ConnectionObject * self,
 
   self->isolation_level =
     _cubrid_return_PyString_FromString (cubrid_isolation
-					[level - 4].isolation);
+					[level - 1].isolation);
 
   Py_INCREF (Py_None);
   return Py_None;
@@ -917,135 +927,6 @@ _cubrid_ConnectionObject_ping (_cubrid_ConnectionObject * self,
   cci_close_req_handle (req_handle);
   return _cubrid_return_PyInt_FromLong (connected);
 }
-
-static char *
-_cubrid_dup_buf (char *src_buf, int size)
-{
-  int len = 0;
-  char *temp_buf = NULL;
-
-  if (src_buf != NULL)
-    {
-      len = strlen (src_buf);
-    }
-  else
-    {
-      len = size;
-    }
-  if (len <= 0)
-    {
-      return NULL;
-    }
-  temp_buf = (char *) malloc (len + 1);
-  if (NULL == temp_buf)
-    {
-      return NULL;
-    }
-  memset (temp_buf, 0, len + 1);
-  if (NULL != src_buf)
-    memcpy (temp_buf, src_buf, len);
-
-  return temp_buf;
-}
-
-static char *
-_cubrid_get_data_buf (int type, int num)
-{
-  switch (type)
-    {
-    case CCI_U_TYPE_BIT:
-    case CCI_U_TYPE_VARBIT:
-      return _cubrid_dup_buf (NULL, sizeof (T_CCI_BIT) * (num + 1));
-    default:
-      return _cubrid_dup_buf (NULL, sizeof (void *) * (num + 1));
-    }
-}
-
-static char _cubrid_ConnectionObject_batch_execute__doc__[] = "batch_execute()\n\
- The api can execute more than one sql statement in the same time\n\
-\n\
-Return values::\n\
-  Tuple: ({'err_no': 0, 'err_msg': 'success'},)\n\
-\n\
-Example::\n\
-  import _cubrid\n\
-  con = _cubrid.connect(\"CUBRID:localhost:33000:demodb:::\", \"public\")\n\
-  sql = (\"insert into test value('1');\", \"insert into test value('2');\")\n\
-  err = con.batch_execute(sql)\n\
-  con.close()";
-
-
-static PyObject *
-_cubrid_ConnectionObject_batch_execute (_cubrid_ConnectionObject * self,
-			       PyObject * args)
-{
-  int count, err_code, i, n_executed;
-  char **sql;
-  T_CCI_QUERY_RESULT *result;
-  T_CCI_ERROR cci_error;
-  PyObject *p_tube;
-  PyObject *p_value;
-  PyDictObject *p_result;
-  PyTupleObject *p_batch_result;
-  
-  if (!PyArg_ParseTuple (args, "O", &p_tube))
-    {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
-    }
-  if (!PyTuple_Check (p_tube))    
-    {      
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);    
-    }  
-  count = PyTuple_GET_SIZE (p_tube);
-  if (count <= 0)
-    {
-      return handle_error (CUBRID_ER_INVALID_PARAM, NULL);  
-    }
-  sql = (char **) _cubrid_get_data_buf (CCI_U_TYPE_CHAR, count + 1);
-  if (NULL == sql)
-    {
-      return handle_error (CUBRID_ER_NO_MORE_MEMORY, NULL);
-    }
-  for (i = 0; i < count; ++i)
-    {
-      p_value = PyTuple_GET_ITEM (p_tube, i);
-      sql[i] = PyString_AsString (p_value);
-    }
-  n_executed = cci_execute_batch (self->handle, count, sql, &result, &cci_error);
-  if (n_executed < 0)
-    {
-      free(sql);
-      return handle_error (n_executed, &cci_error);
-    }
-  free(sql);
-  p_batch_result = PyTuple_New(n_executed);
-  for (i = 0; i < n_executed; ++i)
-    {
-      p_result = PyDict_New();    
-      err_code = PyDict_SetItemString(
-        p_result, "err_no", _cubrid_return_PyInt_FromLong(result[i].err_no));
-      if (result[i].err_no >= 0)
-        {
-          PyDict_SetItemString(
-            p_result, "err_msg", _cubrid_return_PyString_FromString("success"));        
-        }
-      else
-        {
-          PyDict_SetItemString(
-            p_result, "err_msg", _cubrid_return_PyString_FromString(result[i].err_msg));
-        }
-
-      PyTuple_SetItem(p_batch_result, i, p_result);
-    }
-  
-  err_code = cci_query_result_free (result, n_executed);    
-  if (err_code < 0)    
-    {     
-      return handle_error (err_code, NULL);  
-    } 
-  return p_batch_result;
-}
-
 
 static char _cubrid_ConnectionObject_last_insert_id__doc__[] = "insert_id()\n\
 This function returns the value with the IDs generated or the\n\
@@ -1432,11 +1313,7 @@ _cubrid_ConnectionObject_close (_cubrid_ConnectionObject * self,
 {
   T_CCI_ERROR error;
   int err_code;
-  if(self->handle <= 0)
-    {
-      Py_INCREF (Py_None);
-      return Py_None;
-    }
+
   err_code = cci_disconnect (self->handle, &error);
   if (err_code < 0)
     {
@@ -3435,6 +3312,49 @@ _cubrid_SetObject_dealloc (_cubrid_SetObject * self)
 }
 
 static char *
+_cubrid_dup_buf (char *src_buf, int size)
+{
+  int len = 0;
+  char *temp_buf = NULL;
+
+  if (src_buf != NULL)
+    {
+      len = strlen (src_buf);
+    }
+  else
+    {
+      len = size;
+    }
+  if (len <= 0)
+    {
+      return NULL;
+    }
+  temp_buf = (char *) malloc (len + 1);
+  if (NULL == temp_buf)
+    {
+      return NULL;
+    }
+  memset (temp_buf, 0, len + 1);
+  if (NULL != src_buf)
+    memcpy (temp_buf, src_buf, len);
+
+  return temp_buf;
+}
+
+static char *
+_cubrid_get_data_buf (int type, int num)
+{
+  switch (type)
+    {
+    case CCI_U_TYPE_BIT:
+    case CCI_U_TYPE_VARBIT:
+      return _cubrid_dup_buf (NULL, sizeof (T_CCI_BIT) * (num + 1));
+    default:
+      return _cubrid_dup_buf (NULL, sizeof (void *) * (num + 1));
+    }
+}
+
+static char *
 _cubrid_str2bit (char *str)
 {
   int i = 0, len = 0, t = 0;
@@ -3919,11 +3839,6 @@ static PyMethodDef _cubrid_ConnectionObject_methods[] = {
    (PyCFunction) _cubrid_ConnectionObject_escape_string,
    METH_VARARGS,
    _cubrid_ConnectionObject_escape_string__doc__},
-  {
-   "batch_execute",
-   (PyCFunction) _cubrid_ConnectionObject_batch_execute,
-   METH_VARARGS,
-   _cubrid_ConnectionObject_batch_execute__doc__},
   {NULL, NULL}
 };
 
@@ -4108,7 +4023,7 @@ PyTypeObject _cubrid_CursorObject_type = {
   0,				/* tp_free */
 };
 
-#define _CUBRID_VERSION_	"10.0.0.0001"
+#define _CUBRID_VERSION_	"8.4.4.0001"
 static char _cubrid_doc[] = "CUBRID API Module for Python";
 
 #if PY_MAJOR_VERSION >= 3
@@ -4216,6 +4131,21 @@ all_ins (PyObject * d)
     return -1;
 
   if (ins (d, "CUBRID_EXEC_THREAD", (long) CUBRID_EXEC_THREAD))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_COMMIT_CLASS_UNCOMMIT_INSTANCE",
+       (long) TRAN_COMMIT_CLASS_UNCOMMIT_INSTANCE))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_COMMIT_CLASS_COMMIT_INSTANCE",
+       (long) TRAN_COMMIT_CLASS_COMMIT_INSTANCE))
+    return -1;
+
+  if (ins
+      (d, "CUBRID_REP_CLASS_UNCOMMIT_INSTANCE",
+       (long) TRAN_REP_CLASS_UNCOMMIT_INSTANCE))
     return -1;
 
   if (ins

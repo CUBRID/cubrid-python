@@ -89,7 +89,3 @@ class Connection(object):
 
     def server_version(self):
         return self.connection.server_version()
-
-    def batch_execute(self, sql):
-        return self.connection.batch_execute(sql)
-

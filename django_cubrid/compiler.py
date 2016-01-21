@@ -51,10 +51,9 @@ class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
     pass
 
 
-if django.VERSION >= (1, 6) and django.VERSION < (1, 8):
+class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
+    pass
 
-    class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
-        pass
-
+if django.VERSION >= (1, 6):
     class SQLDateTimeCompiler(compiler.SQLDateTimeCompiler, SQLCompiler):
         pass

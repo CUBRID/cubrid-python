@@ -1,4 +1,3 @@
-import sys
 from CUBRIDdb import FIELD_TYPE
 
 
@@ -99,13 +98,10 @@ class BaseCursor(object):
         """
         self.__check_state()
 
-        if not isinstance(query, (bytes, bytearray)):
+        if not isinstance (query, (bytes, bytearray)):
             stmt = query.encode(self.charset)
         else:
             stmt = query
-
-        if sys.version_info >= (3, 3):
-            stmt = stmt.decode()
 
         self._cs.prepare(stmt)
 

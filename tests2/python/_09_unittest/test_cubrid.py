@@ -4,7 +4,6 @@ from _cubrid import *
 import time
 import sys
 import os
-import os.path
 from xml.dom import minidom
 
 class DatabaseTest(unittest.TestCase):
@@ -69,7 +68,6 @@ class DatabaseTest(unittest.TestCase):
         self.failUnless(
                 issubclass(self.driver.NotSupportedError,self.driver.Error)
                 )
-
 
     def test_commit(self):
         con = self._connect()
@@ -176,7 +174,7 @@ class DatabaseTest(unittest.TestCase):
         con = self._connect()
         try:
             self.assertEqual(con.autocommit, 'TRUE',
-                    'connection.autocommit default is TRUE')
+                    'connection.autocommit default is FALSE')
             con.set_autocommit('ON')
             self.assertEqual(con.autocommit, 'TRUE',
                     'connection.autocommit should TURE after set on')
@@ -364,7 +362,7 @@ class DatabaseTest(unittest.TestCase):
         except Exception,e:
             errorValue=str(e)
             print errorValue
-            self.assertEqual(errorValue[1:5],"-494")
+            self.assertEqual(errorValue,"(-494, 'ERROR: DBMS, -494, Semantic: Cannot coerce host var to type date. ')")
         finally:
             cur.close()
             con.close()

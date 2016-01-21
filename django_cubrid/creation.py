@@ -4,10 +4,8 @@ import time
 import subprocess
 import django
 
-if django.VERSION >= (1, 8):
-    from django.db.backends.base.creation import BaseDatabaseCreation
-else:
-    from django.db.backends.creation import BaseDatabaseCreation
+from django.db.backends.creation import BaseDatabaseCreation
+
 # The prefix to put on the default database name when creating
 # the test database.
 TEST_DATABASE_PREFIX = 'test_'

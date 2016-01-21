@@ -48,7 +48,7 @@ class CUBRIDPythonDBITest(unittest.TestCase):
 	def test_connection_with_wrong_parameter(self):
 		print("\n03. Connection with wrong parameter")
 		try:
-			self.con = CUBRIDdb.connect("CUBRID:10.34.64:300a12:pydb:::")
+			self.con = CUBRIDdb.connect("CUBRID:10.34.64:300a12:pydb:::?autocommit=false")
 		except Exception,e:
                         print("connect error: ", e)
                         #self.con.close()
@@ -98,5 +98,6 @@ class CUBRIDPythonDBITest(unittest.TestCase):
                 self.con.close()
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(CUBRIDPythonDBITest)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+       #unittest.main()
+       suite = unittest.TestLoader().loadTestsFromTestCase(CUBRIDPythonDBITest)
+       unittest.TextTestRunner(verbosity=2).run(suite)

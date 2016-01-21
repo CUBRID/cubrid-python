@@ -4,7 +4,6 @@ Cubrid database backend for Django.
 Requires CUBRIDdb: http://www.cubrid.org/wiki_apis
 """
 
-import re
 import sys
 import django
 import warnings
@@ -16,6 +15,7 @@ except ImportError, e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured("Error loading CUBRIDdb module: %s" % e)
 
+from django.db import utils
 from django.db.backends import *
 from django.db.backends.signals import connection_created
 from django_cubrid.client import DatabaseClient
@@ -24,14 +24,8 @@ from django_cubrid.introspection import DatabaseIntrospection
 from django_cubrid.validation import DatabaseValidation
 from django.utils import timezone
 from django.conf import settings
-if django.VERSION >= (1, 7) and django.VERSION < (1, 8):
-    from schema import DatabaseSchemaEditor
-elif django.VERSION >= (1, 8):
-    from schema import DatabaseSchemaEditor
-    from django.db.backends.base.base import BaseDatabaseWrapper
-    from django.db.backends.base.features import BaseDatabaseFeatures
-    from django.db.backends.base.operations import BaseDatabaseOperations
-    from django.utils.functional import cached_property
+
+import re
 
 
 class CursorWrapper(object):
@@ -47,10 +41,11 @@ class CursorWrapper(object):
         try:
             query = re.sub('([^%])%s', '\\1?', query)
             query = re.sub('%%', '%', query)
+
             return self.cursor.execute(query, args)
 
-        except Exception as e:
-            raise sys.exc_info()[0], e.message, sys.exc_info()[2]
+        except Database.DatabaseError as e:
+            raise sys.exc_info()[0], utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
 
     def executemany(self, query, args):
         try:
@@ -58,8 +53,8 @@ class CursorWrapper(object):
             query = re.sub('%%', '%', query)
 
             return self.cursor.executemany(query, args)
-        except Exception as e:
-            raise sys.exc_info()[0], e.message, sys.exc_info()[2]
+        except Database.DatabaseError as e:
+            raise sys.exc_info()[0], utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
 
     def __getattr__(self, attr):
         if attr in self.__dict__:
@@ -72,8 +67,7 @@ class CursorWrapper(object):
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
-
-    allows_group_by_pk = True
+    allows_group_by_pk = True 
 
     # Can an object have a primary key of 0? MySQL says No.
     allows_primary_key_0 = True
@@ -146,24 +140,16 @@ class DatabaseOperations(BaseDatabaseOperations):
             return "EXTRACT(%s FROM %s)" % (lookup_type.upper(), field_name)
 
     def date_trunc_sql(self, lookup_type, field_name):
-        fields = [
-                'year', 'month', 'day', 'hour',
-                'minute', 'second', 'milisecond'
-            ]
-        # Use double percents to escape.
-        format = (
-                '%%Y-', '%%m', '-%%d', ' %%H:', '%%i', ':%%s', '.%%ms'
-            )
+        fields = ['year', 'month', 'day', 'hour', 'minute', 'second', 'milisecond']
+        format = ('%%Y-', '%%m', '-%%d', ' %%H:', '%%i', ':%%s', '.%%ms') # Use double percents to escape.
         format_def = ('0000-', '01', '-01', ' 00:', '00', ':00', '.00')
         try:
             i = fields.index(lookup_type) + 1
         except ValueError:
             sql = field_name
         else:
-            format_str = ''.join(
-                [f for f in format[:i]] + [f for f in format_def[i:]])
-            sql = "CAST(DATE_FORMAT(%s, '%s') AS DATETIME)" % (
-                field_name, format_str)
+            format_str = ''.join([f for f in format[:i]] + [f for f in format_def[i:]])
+            sql = "CAST(DATE_FORMAT(%s, '%s') AS DATETIME)" % (field_name, format_str)
         return sql
 
     def datetime_extract_sql(self, lookup_type, field_name, tzname):
@@ -186,8 +172,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         params = []
         fields = ['year', 'month', 'day', 'hour', 'minute', 'second', 'milisecond']
-        # Use double percents to escape.
-        format = ('%%Y-', '%%m', '-%%d', ' %%H:', '%%i', ':%%s', '.%%ms')
+        format = ('%%Y-', '%%m', '-%%d', ' %%H:', '%%i', ':%%s', '.%%ms') # Use double percents to escape.
         format_def = ('0000-', '01', '-01', ' 00:', '00', ':00', '.00')
         try:
             i = fields.index(lookup_type) + 1
@@ -200,15 +185,14 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def date_interval_sql(self, sql, connector, timedelta):
         if connector.strip() == '+':
-            func = "ADDDATE"
+          func = "ADDDATE"
         else:
-            func = "SUBDATE"
+          func = "SUBDATE"
 
         fmt = "%s (%s, INTERVAL '%d 0:0:%d:%d' DAY_MILLISECOND)"
 
-        return fmt % (
-            func, sql, timedelta.days,
-            timedelta.seconds, timedelta.microseconds / 1000)
+        return fmt % (func, sql, timedelta.days,
+                timedelta.seconds, timedelta.microseconds / 1000)
 
     def drop_foreignkey_sql(self):
         return "DROP FOREIGN KEY"
@@ -221,8 +205,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def quote_name(self, name):
         if name.startswith("`") and name.endswith("`"):
-            # Quoting once is enough.
-            return name
+            return name # Quoting once is enough.
         return "`%s`" % name
 
     def no_limit_value(self):
@@ -240,7 +223,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         # I think LAST_INSERT_ID should be modified
         # to return appropriate column type value.
         if result[0] < sys.maxint:
-            return int(result[0])
+          return int(result[0])
 
         return result[0]
 
@@ -258,12 +241,13 @@ class DatabaseOperations(BaseDatabaseOperations):
 
             # 'ALTER TABLE table AUTO_INCREMENT = 1;'... style SQL statements
             # to reset sequence indices
-            sql.extend(
-                ["%s %s %s %s %s;" % (style.SQL_KEYWORD('ALTER'),
+            sql.extend(["%s %s %s %s %s;" % \
+                (style.SQL_KEYWORD('ALTER'),
                  style.SQL_KEYWORD('TABLE'),
                  style.SQL_TABLE(self.quote_name(sequence['table'])),
                  style.SQL_KEYWORD('AUTO_INCREMENT'),
-                 style.SQL_FIELD('= 1'),) for sequence in sequences])
+                 style.SQL_FIELD('= 1'),
+                ) for sequence in sequences])
             return sql
         else:
             return []
@@ -316,8 +300,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         # to prevent a syntax error in contrib.auth application.
         'iexact': '= %s',
         'contains': 'LIKE %s',
-        'icontains': 'iLIKE %s',
-        # not supported. causes syntax error.
+        'icontains': 'iLIKE %s', # not supported. causes syntax error.
         'regex': 'REGEXP BINARY %s',
         'iregex': 'REGEXP %s',
         'gt': '> %s',
@@ -326,40 +309,9 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'lte': '<= %s',
         'startswith': 'LIKE %s',
         'endswith': 'LIKE %s',
-        # not supported. causes syntax error.
-        'istartswith': 'iLIKE %s',
-        # not supported. causes syntax error.
-        'iendswith': 'iLIKE %s',
+        'istartswith': 'iLIKE %s', # not supported. causes syntax error.
+        'iendswith': 'iLIKE %s', # not supported. causes syntax error.
         }
-    if django.VERSION >= (1, 8):
-        _data_types = {
-            'AutoField': 'integer AUTO_INCREMENT',
-            'BinaryField': 'blob',
-            'BooleanField': 'short',
-            'CharField': 'varchar(%(max_length)s)',
-            'CommaSeparatedIntegerField': 'varchar(%(max_length)s)',
-            'DateField': 'date',
-            'DateTimeField': 'datetime',
-            'DecimalField': 'numeric(%(max_digits)s, %(decimal_places)s)',
-            'DurationField': 'bigint',
-            'FileField': 'varchar(%(max_length)s)',
-            'FilePathField': 'varchar(%(max_length)s)',
-            'FloatField': 'double precision',
-            'IntegerField': 'integer',
-            'BigIntegerField': 'bigint',
-            'IPAddressField': 'char(15)',
-            'GenericIPAddressField': 'char(39)',
-            'NullBooleanField': 'short',
-            'OneToOneField': 'integer',
-            'PositiveIntegerField': 'integer',
-            'PositiveSmallIntegerField': 'smallint',
-            'SlugField': 'varchar(%(max_length)s)',
-            'SmallIntegerField': 'smallint',
-            'TextField': 'string',
-            'TimeField': 'time',
-            'UUIDField': 'char(32)',
-        }
-        SchemaEditorClass = DatabaseSchemaEditor
 
     Database = Database
 
@@ -374,19 +326,17 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self.introspection = DatabaseIntrospection(self)
         self.validation = DatabaseValidation(self)
 
-    if django.VERSION >= (1, 8):
-        @cached_property
-        def data_types(self):
-            if self.features.supports_microsecond_precision:
-                return dict(self._data_types, DateTimeField='datetime', TimeField='time')
-            else:
-                return self._data_types
+    def _valid_connection(self):
+        if self.connection is not None:
+            return True
+
+        return False
 
     def get_connection_params(self):
-        # Backend-specific parameters
+        ##### Backend-specific parameters #####
         return None
 
-    def get_new_connection(self, conn_params):
+    def get_new_connection (self, conn_params):
         settings_dict = self.settings_dict
 
         # Connection to CUBRID database is made through connect() method.
@@ -417,21 +367,16 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         url += ':::'
 
         con = Database.connect(url, user, passwd, charset='utf8')
-        con.set_fetch_value_converter(django_fetch_value_converter)
+        con.set_fetch_value_converter (django_fetch_value_converter)
 
         return con
-
-    def _valid_connection(self):
-        if self.connection is not None:
-            return True
-        return False
 
     def init_connection_state(self):
         pass
 
     def create_cursor(self):
         if not self._valid_connection():
-            self.connection = self.get_new_connection(None)
+            self.connection = self.get_new_connection (None)
             connection_created.send(sender=self.__class__, connection=self)
 
         cursor = CursorWrapper(self.connection.cursor())
@@ -441,17 +386,12 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self.connection.autocommit = autocommit
 
     def is_usable(self):
-        try:
-            self.connection.ping()
-        except Database.Error:
-            return False
-        else:
-            return True
+        return self._valid_connection()
 
     def get_server_version(self):
         if not self.server_version:
             if not self._valid_connection():
-                self.connection = self.get_new_connection(None)
+                self.connection = self.get_new_connection (None)
             m = self.connection.server_version()
             if not m:
                 raise Exception('Unable to determine CUBRID version')
@@ -462,10 +402,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         # CUBRID does not support "RELEASE SAVEPOINT xxx"
         pass
 
-    if django.VERSION >= (1, 7) and django.VERSION < (1, 8):
-        def schema_editor(self, *args, **kwargs):
-            return DatabaseSchemaEditor(self, *args, **kwargs)
-
 
 def django_fetch_value_converter(row, descriptor):
     # We need to convert naive datetime values to aware, if USE_TZ is true.
@@ -475,7 +411,7 @@ def django_fetch_value_converter(row, descriptor):
     index = 0
     for des in descriptor:
         if des[1] == FIELD_TYPE.DATETIME and timezone.is_naive(row[index]):
-            row[index] = row[index].replace(tzinfo=timezone.utc)
+            row[index] = row[index].replace(tzinfo = timezone.utc)
 
         index = index + 1
 
