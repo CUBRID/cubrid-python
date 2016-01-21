@@ -1,23 +1,11 @@
 import unittest
 import _cubrid
 from _cubrid import *
-
-from xml.dom import minidom
-
+import time
 
 class DatabaseTest(unittest.TestCase):
     driver = _cubrid
-
-    xmlt = minidom.parse('python_config.xml')
-    ips = xmlt.childNodes[0].getElementsByTagName('ip')
-    ip = ips[0].childNodes[0].toxml()
-    ports = xmlt.childNodes[0].getElementsByTagName('port')
-    port = ports[0].childNodes[0].toxml()
-    dbnames = xmlt.childNodes[0].getElementsByTagName('dbname')
-    dbname = dbnames[0].childNodes[0].toxml()
-    conStr = "CUBRID:"+ip+":"+port+":"+dbname+":::"
-
-    connect_args = (conStr, 'dba', '')
+    connect_args = ('CUBRID:localhost:33000:demodb', 'public')
     connect_kw_args = {}
 
     def setUp(self):
@@ -26,23 +14,14 @@ class DatabaseTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _check_table_exist(self, connect):
-        cursor = connect.cursor()
-        cursor.prepare('DROP TABLE IF EXISTS test_cubrid')
-        cursor.execute()
-        connect.commit()
-        cursor.close()
-
     def _connect(self):
         try:
-            con = self.driver.connect(
+            return self.driver.connect(
                     *self.connect_args, **self.connect_kw_args
                     )
-            self._check_table_exist(con)
-            return con
         except AttributeError:
             self.fail("No connect method found in self.driver module")
-
+            
     def test_connect(self):
         con = self._connect()
         con.close()
@@ -69,6 +48,18 @@ class DatabaseTest(unittest.TestCase):
                 )
         self.failUnless(
                 issubclass(self.driver.DatabaseError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.OperationalError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.IntegrityError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.InternalError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.ProgrammingError,self.driver.Error)
                 )
         self.failUnless(
                 issubclass(self.driver.NotSupportedError,self.driver.Error)
@@ -172,13 +163,13 @@ class DatabaseTest(unittest.TestCase):
     def test_autocommit(self):
         con = self._connect()
         try:
-            self.assertEqual(con.autocommit, True,
-                    'connection.autocommit default is True')
-            con.set_autocommit(True)
-            self.assertEqual(con.autocommit, True,
+            self.assertEqual(con.autocommit, 'FALSE',
+                    'connection.autocommit default is FALSE')
+            con.set_autocommit('ON')
+            self.assertEqual(con.autocommit, 'TRUE',
                     'connection.autocommit should TURE after set on')
-            con.set_autocommit(False)
-            self.assertEqual(con.autocommit, False,
+            con.set_autocommit('OFF')
+            self.assertEqual(con.autocommit, 'FALSE',
                     'connection.autocommit should TURE after set on')
         finally:
             con.close()
@@ -212,7 +203,10 @@ class DatabaseTest(unittest.TestCase):
             cur.prepare("insert into test_cubrid(name) values ('Blair')")
             cur.execute()
             insert_id = con.insert_id()
-            self.assertEqual(insert_id, 1000000000000,
+            cur.prepare('select * from test_cubrid')
+            cur.execute()
+            row = cur.fetch_row()
+            self.assertEqual(row[0], insert_id,
                     'connection.insert_id() get incorrect result')
         finally:
             cur.close()
@@ -265,7 +259,7 @@ class DatabaseTest(unittest.TestCase):
             self._select_data(cur)
 
             self.assertEqual(cur.num_fields(), 1,
-                    'cursor.num_fields() get incorrect result')
+                    'cusor.num_fields() get incorrect result')
             self.assertEqual(cur.num_rows(), cur.rowcount,
                     'cursor.num_rows() get incorrect result')
             cur.data_seek(3)
@@ -297,16 +291,16 @@ class DatabaseTest(unittest.TestCase):
         finally:
             cur.close()
             con.close()
-
+   
     def test_bind_int(self):
-        t_bind_int = 'create table test_cubrid (id int)'
+        t_bind_int = 'create table test_int (id int)'
         samples_int = ['100', '200', '300', '400']
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(t_bind_int);
             cur.execute()
-            cur.prepare("insert into test_cubrid values (?),(?),(?),(?)")
+            cur.prepare("insert into test_int values (?),(?),(?),(?)")
             for i in range(len(samples_int)):
                 cur.bind_param(i+1, samples_int[i])
             cur.execute()
@@ -316,13 +310,13 @@ class DatabaseTest(unittest.TestCase):
             con.close()
 
     def test_bind_float(self):
-        ddl_float = 'create table test_cubrid (id float)'
+        ddl_float = 'create table test_float (id float)'
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(ddl_float)
-            cur.execute()
-            cur.prepare("insert into test_cubrid values (?)")
+            cur.execute()            
+            cur.prepare("insert into test_float values (?)")
             cur.bind_param(1, '3.14')
             cur.execute()
             self.failUnless(cur.affected_rows() in (-1, 1))
@@ -331,81 +325,87 @@ class DatabaseTest(unittest.TestCase):
             con.close()
 
     def test_bind_date_e(self):
-        ddl_date = 'create table test_cubrid (birthday date)'
+        ddl_date = 'create table test_date (birthday date)'
         con = self._connect()
         cur = con.cursor()
-        error = 0
         try:
             cur.prepare(ddl_date)
             cur.execute()
-            cur.prepare('insert into test_cubrid values (?)')
+            cur.prepare('insert into test_date values (?)')
+            birthday1 = self.driver.Date(2011, 2, 31)
             # if pass wrong params, there should be an exception
-            cur.bind_param(1, "2011-2-31")
+            cur.bind_param(1, birthday1)
             cur.execute()
-        except DatabaseError:
-            error = 1
         finally:
             cur.close()
             con.close()
-        self.assertEqual(error, 1, "catch one except.")
 
     def test_bind_date(self):
-        ddl_date = 'create table test_cubrid (birthday date)'
+        ddl_date = 'create table test_date (birthday date)'
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(ddl_date)
             cur.execute()
-            cur.prepare('insert into test_cubrid values (?)')
-            cur.bind_param(1, "1987-10-29")
+            cur.prepare('insert into test_date values (?),(?)')
+            birthday = self.driver.Date(1987, 10, 29)
+            cur.bind_param(1, birthday)
+            birthday2 = self.driver.DateFromTicks(time.mktime((2011,5,3,11,30,30,0,0,0)))
+            cur.bind_param(2, birthday2)
             cur.execute()
         finally:
             cur.close()
             con.close()
 
     def test_bind_time(self):
-        ddl_date = 'create table test_cubrid (lunch time)'
+        ddl_date = 'create table test_date (lunch time)'
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(ddl_date)
             cur.execute()
-            cur.prepare('insert into test_cubrid values (?)')
-            cur.bind_param(1, "11:30:29")
+            lunch = self.driver.Time(11, 30, 29)
+            cur.prepare('insert into test_date values (?),(?)')
+            cur.bind_param(1, lunch)
+            lunch1 = self.driver.TimeFromTicks(time.mktime((2011,5,3,11,30,30,0,0,0)))
+            cur.bind_param(2, lunch1)
             cur.execute()
         finally:
             cur.close()
             con.close()
 
     def test_bind_timestamp(self):
-        ddl_date = 'create table test_cubrid (lunch timestamp)'
+        ddl_date = 'create table test_date (lunch timestamp)'
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(ddl_date)
             cur.execute()
-            cur.prepare('insert into test_cubrid values (?)')
-            cur.bind_param(1, "2011-5-3 11:30:29")
+            cur.prepare('insert into test_date values (?),(?)')
+            lunch = self.driver.Timestamp(2011, 5, 3, 11, 30, 29)
+            cur.bind_param(1, lunch)
+            lunch1 = self.driver.TimestampFromTicks(time.mktime((2011,5,3,11,30,30,0,0,0)))
+            cur.bind_param(2, lunch1)
             cur.execute()
         finally:
             cur.close()
             con.close()
 
     def test_lob_file(self):
-        t_blob = 'create table test_cubrid (picture blob)'
+        t_blob = 'create table test_blob (picture blob)'
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(t_blob)
             cur.execute()
-            cur.prepare('insert into test_cubrid values (?)')
+            cur.prepare('insert into test_blob values (?)')
             lob = con.lob()
             lob.imports('cubrid_logo.png')
             cur.bind_lob(1, lob)
             cur.execute()
             lob.close()
 
-            cur.prepare('select * from test_cubrid')
+            cur.prepare('select * from test_blob')
             cur.execute()
             lob_fetch = con.lob()
             cur.fetch_lob(1, lob_fetch)
@@ -416,20 +416,20 @@ class DatabaseTest(unittest.TestCase):
             con.close()
 
     def test_lob_string(self):
-        t_clob = 'create table test_cubrid (content clob)'
+        t_clob = 'create table test_clob (content clob)'
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(t_clob)
             cur.execute()
-            cur.prepare('insert into test_cubrid values (?)') 
+            cur.prepare('insert into test_clob values (?)') 
             lob = con.lob()
             lob.write('hello world', 'C')
             cur.bind_lob(1, lob)
             cur.execute()
             lob.close()
 
-            cur.prepare('select * from test_cubrid')
+            cur.prepare('select * from test_clob')
             cur.execute()
             lob_fetch = con.lob()
             cur.fetch_lob(1, lob_fetch)
@@ -442,15 +442,15 @@ class DatabaseTest(unittest.TestCase):
             con.close()
 
     def test_result_info(self):
-        t_result_info = 'create table test_cubrid (id int primary key, name varchar(20))'
+        t_result_info = 'create table test_result_info (id int primary key, name varchar(20))'
         con = self._connect()
         cur = con.cursor()
         try:
             cur.prepare(t_result_info)
             cur.execute()
-            cur.prepare("insert into test_cubrid values (?,?)")
+            cur.prepare("insert into test_result_info values (?,?)")
             cur.bind_param(1, '1000')
-            cur.prepare('select * from test_cubrid')
+            cur.prepare('select * from test_result_info')
             cur.execute()
             info = cur.result_info()
             self.assertEqual(len(info), 2,
@@ -466,17 +466,14 @@ class DatabaseTest(unittest.TestCase):
         finally:
             cur.close()
             con.close()
-
-
+    
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(DatabaseTest("test_bind_timestamp"))
     return suite
 
 if __name__ == '__main__':
-    log_file = 'test_cubrid.result'
-    f = open(log_file, "w")
-    unittest.TextTestRunner(
-        verbosity=2, stream=f).run(
-        unittest.TestLoader().loadTestsFromTestCase(DatabaseTest))
-    f.close()
+    #unittest.main(defaultTest = 'suite')
+    #unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(DatabaseTest)
+    unittest.TextTestRunner(verbosity=2).run(suite)

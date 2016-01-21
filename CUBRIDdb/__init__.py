@@ -15,21 +15,9 @@ paramstyle = 'qmark'
 from _cubrid import *
 from CUBRIDdb import FIELD_TYPE
 
-from time import localtime
-from datetime import date, datetime, time
-
-Date = date
-Time = time
-Timestamp = datetime
-
-def DateFromTicks(ticks):
-    return date(*localtime(ticks)[:3])
-
-def TimeFromTicks(ticks):
-    return time(*localtime(ticks)[3:6])
-
-def TimestampFromTicks(ticks):
-    return datetime(*localtime(ticks)[:6])
+from _cubrid_exceptions import Warning, Error, InterfaceError, DataError, \
+        DatabaseError, OperationalError, IntegrityError, InternalError, \
+        NotSupportedError, ProgrammingError
 
 try:
     frozenset
@@ -61,14 +49,28 @@ def Connect(*args, **kwargs):
     return Connection(*args, **kwargs)
 
 connect = connection = Connect
+Date = Date
+Time = Time
+Timestamp = Timestamp
+DateFromTicks = DateFromTicks
+TimeFromTicks = TimeFromTicks
+TimestampFromTicks = TimestampFromTicks
 
+Warning = Warning
 Error = Error
 InterfaceError = InterfaceError
 DatabaseError = DatabaseError
+DataError = DataError
+OperationalError = OperationalError
+IntegrityError = IntegrityError
+InternalError = InternalError
+ProgrammingError = ProgrammingError
 NotSupportedError = NotSupportedError
 
-__all__ = [ 'Connect', 'connection', 'connect', 'connections', 'DatabaseError', 
-    'Error', 'InterfaceError', 'NotSupportedError', 'apilevel', 'Cursor', 
+__all__ = [ 'Connect', 'connection', 'connect', 'connections','DataError', 
+    'DatabaseError', 'Error', 'IntegrityError', 'InterfaceError', 
+    'InternalError', 'CUBRIDError', 'Warning', 'NotSupportedError', 
+    'OperationalError', 'ProgrammingError', 'apilevel', 'Cursor', 
     'DictCursor', 'paramstyle', 'threadsafety', 'STRING', 'BINARY', 'NUMBER',
     'DATE', 'TIME', 'TIMESTAMP', 'DATETIME', 'ROWID', 'SET', 'BLOB', 'CLOB'] 
     

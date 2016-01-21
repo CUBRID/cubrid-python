@@ -1,12 +1,3 @@
-Change from 8.4.1.0001 to 8.4.0.0001
- 1. APIS-91 - Fetchone get numeric data's type is not correct
- 2. APIS-93 - The format of Cubrid Date/Time/Timestamp string are different from Python's
-
-Changed from 8.4.0 to 8.4.0.0001
- 1. Added support for python 2.4 and 2.5
- 2. Modified cursor.next_result() function
- 3. Added test case test_next_result() in test_cubrid.py
-
 Changes from 0.5.0 to 8.4.0
  1. Modified the architecture of CUBRID Python API, supported two-level interface.
     The high-level interface was a package, called CUBRIDdb, which respected the
@@ -35,3 +26,9 @@ Changes from 0.5.0 to 8.4.0
  10.Added simple usage example as requested by many people.
  11.Modified README
  12.Added HISTORY file to the distribution.
+
+
+Changed from 8.4.0 to 8.4.0.0001
+ 1. Added support for python 2.4 and 2.5
+ 2. Modified cursor.next_result() function
+ 3. Added test case test_next_result() in test_cubrid.py

@@ -1,25 +1,17 @@
 import unittest
 import CUBRIDdb
 import time
-from xml.dom import minidom
+
 class DBAPI20Test(unittest.TestCase):
     driver = CUBRIDdb
-    xmlt = minidom.parse('configuration/python_config.xml')
-    ips = xmlt.childNodes[0].getElementsByTagName('ip')
-    ip = ips[0].childNodes[0].toxml()
-    ports = xmlt.childNodes[0].getElementsByTagName('port')
-    port = ports[0].childNodes[0].toxml()
-    dbnames = xmlt.childNodes[0].getElementsByTagName('dbname')
-    dbname = dbnames[0].childNodes[0].toxml()
-    conStr = "CUBRID:"+ip+":"+port+":"+dbname+":::"   
-    connect_args = (conStr, 'dba','')
+    connect_args = ('CUBRID:localhost:33000:demodb', 'public')
     connect_kw_args = {}
     table_prefix = 'dbapi20test_'
 
     ddl1 = 'create table %sbooze (name varchar(20))' % table_prefix
     ddl2 = 'create table %sbarflys (name varchar(20))' % table_prefix
-    xddl1 = 'drop table if exists %sbooze' % table_prefix
-    xddl2 = 'drop table if exists %sbarflys' % table_prefix
+    xddl1 = 'drop table %sbooze' % table_prefix
+    xddl2 = 'drop table %sbarflys' % table_prefix
 
     def executeDDL1(self, cursor):
         cursor.execute(self.ddl1)
@@ -28,13 +20,10 @@ class DBAPI20Test(unittest.TestCase):
         cursor.execute(self.ddl2)
 
     def setup(self):
-	print "setup... "	
+        pass
 
     def tearDown(self):
-        con = self._connect()
-        cur = con.cursor()
-        cur.execute(self.xddl1)
-        cur.execute(self.xddl2)
+        pass
 
     def _connect(self):
         try:
@@ -71,6 +60,7 @@ class DBAPI20Test(unittest.TestCase):
     def test_Exceptions(self):
         # Make sure required exceptions exist, and are in the
         # defined heirarchy.
+        self.failUnless(issubclass(self.driver.Warning, Exception))
         self.failUnless(issubclass(self.driver.Error, Exception))
         self.failUnless(
                 issubclass(self.driver.InterfaceError, self.driver.Error)
@@ -78,7 +68,21 @@ class DBAPI20Test(unittest.TestCase):
         self.failUnless(
                 issubclass(self.driver.DatabaseError,self.driver.Error)
                 )
-
+        self.failUnless(
+                issubclass(self.driver.OperationalError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.IntegrityError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.InternalError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.ProgrammingError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.NotSupportedError,self.driver.Error)
+                )
 
     def test_commit(self):
         con = self._connect()
