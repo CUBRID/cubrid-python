@@ -26,8 +26,8 @@ class IssueTest(unittest.TestCase):
                 self.cur.execute("INSERT INTO issue (name,nameid,age) VALUES('Mike',1,30),('John',2,28),('Bill',3,45)")
 
         def tearDown(self):
-                self.cur.close()
-                self.con.close()
+                self.cur.close
+                self.con.close
 
         def test_connect(self):
                 print "\nconnect url is empty"
@@ -52,7 +52,7 @@ class IssueTest(unittest.TestCase):
                 except Exception,e:
                     errorValue=str(e)
                     print errorValue
-                    self.assertEquals(errorValue[1:5],'-493')
+                    self.assertEquals(errorValue,'(-493, "ERROR: DBMS, -493, Syntax: In line 1, column 1 before \' information\'\\nSyntax error: unexpected \'error\', expecting SELECT or VALUE or VALUES or \'(\' \")')
 
                 print "\nexecute empty statement"
                 try:
@@ -66,7 +66,7 @@ class IssueTest(unittest.TestCase):
                 except Exception,e:
                     errorValue=str(e)
                     print errorValue
-                    self.assertEquals(errorValue[1:5],"-424")
+                    self.assertEquals(errorValue,"(-424, 'ERROR: DBMS, -424, No statement to execute.')")
 
                 print "\ncol_count==0"
                 try:
@@ -74,13 +74,13 @@ class IssueTest(unittest.TestCase):
                 except Exception,e:
                     errorValue=str(e)
                     print errorValue
-                    self.assertEquals(errorValue[1:5],'-493')
+                    self.assertEquals(errorValue,'(-493, "ERROR: DBMS, -493, Syntax: In line 1, column 23 before END OF STATEMENT\\nSyntax error: unexpected \')\', expecting SELECT or VALUE or VALUES or \'(\' ")')
                 try:
                     self.cur.execute("select from issue")
                 except Exception,e:
                     errorValue=str(e)
                     print errorValue
-                    self.assertEquals(errorValue[1:5],'-493')
+                    self.assertEquals(errorValue,'(-493, "ERROR: DBMS, -493, Syntax: In line 1, column 8 before \' issue\'\\nSyntax error: unexpected \'from\' ")')
 
         def test_executeParam(self):
                 print "\nparameter_count==0"
@@ -97,7 +97,8 @@ class IssueTest(unittest.TestCase):
                 except Exception,e:
                     errorValue=str(e)
                     print errorValue
-                    self.assertEquals(errorValue[1:5],'-494')                   
+                    #self.assertEquals(errorValue,'(-494, \"ERROR: DBMS, -494, Semantic: before \'  values(?,?,?)\'\\nThe number of attributes(2) and values(3) are not equal. insert into issue (nameid, age) values ( cast(\'1\' as integer...\")')
+                    self.assertEquals(errorValue, '(-494, "ERROR: DBMS, -494, Semantic: before \'  values(?,?,?)\'\\nThe number of attributes(2) and values(3) are not equal. insert into issue issue (issue.nameid, issue.age) values ( c...")')                     
 
                 print "\nparameter's value is not corret"
                 try:
@@ -105,7 +106,8 @@ class IssueTest(unittest.TestCase):
                 except Exception,e:
                     errorValue=str(e)
                     print errorValue
-                    self.assertEquals(errorValue[1:5],'-494') 
+                    self.assertEquals(errorValue,"(-494, 'ERROR: DBMS, -494, Semantic: Cannot coerce host var to type integer. ')")
+
         def test_(self):
                 print "\nparameter_count==0"
                 try:

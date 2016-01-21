@@ -94,7 +94,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from collection_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description
-                dataCheck = (('c_set', 32, 0, 0, 0, 0, 0), ('c_multiset', 64, 0, 0, 0, 0, 0), ('c_sequence', 96, 0, 0, 0, 0, 0))
+                dataCheck = (('c_set', 32, 0, 0, 8, 0, 0), ('c_multiset', 64, 0, 0, 8, 0, 0), ('c_sequence', 96, 0, 0, 8, 0, 0))
                 self.assertEquals(dataCheck, dataDesc)
 
 	def test_all(self):

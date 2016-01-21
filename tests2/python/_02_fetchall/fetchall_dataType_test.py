@@ -7,7 +7,6 @@ from datetime import time
 from datetime import date
 from datetime import datetime
 from xml.dom import minidom
-from CUBRIDdb import FIELD_TYPE
 
 class FetchoneTypeTest(unittest.TestCase):
         def getConStr(self):
@@ -190,7 +189,10 @@ class FetchoneTypeTest(unittest.TestCase):
                    rowNum = self.cur.execute(sqlInsert)
                 except Exception,e:
                     errorValue=str(e)
-                    self.assertEquals(cmp(errorValue[2:5], '-494'),True)
+                    print ("errorValue: ",e)
+                    #self.assertEquals(errorValue,"(-1, \"ERROR: DBMS, -494, Semantic: Cannot coerce \'a\' to type nchar. insert into character_db (c_nchar) values ( cast(\'a\' as nchar(4))), ( cast(\'abcd\' as nchar(4))), ( cast(\'abcdefg\' as nchar(4)))\")")
+                    #self.assertEquals(errorValue,"(-494, \"ERROR: DBMS, -494, Semantic: Cannot coerce \'a\' to type nchar. insert into character_db (c_nchar) values ( cast(\'a\' as ncha...\")");
+                    self.assertEquals(errorValue, '(-494, "ERROR: DBMS, -494, Semantic: Cannot coerce \'a\' to type nchar. insert into character_db character_db (character_db.c_nchar)...")')
                 sqlSelect = "select * from character_db"
                 self.cur.execute(sqlSelect)
 		results=self.cur.fetchall()
@@ -364,22 +366,7 @@ class FetchoneTypeTest(unittest.TestCase):
 			print(res)
 	        self.assertEquals(0,len(results))
 		print
-	def test_fetchview_set(self):
-#               test normal set varying type
-                         
-		#rowNum = self.cur.execute(sqlInsert)
-                self.cur.execute("DROP TABLE IF EXISTS set_tbl_int")
-		sqlCreate = "CREATE TABLE set_tbl_int(col_1 set(int));"
-                set_val=(('1','23','48'),)
-                etype = FIELD_TYPE.INT
-                self.cur.execute(sqlCreate)
-                self.cur.execute("insert into set_tbl_int VALUES(?)", set_val,etype)
-                
-		results=self.cur.fetchall()
-		for res in results:
-                    print(res)
-                self.con.commit()
-		print	
+
 if __name__ == '__main__':
 	suite = unittest.TestLoader().loadTestsFromTestCase(FetchoneTypeTest)
 	unittest.TextTestRunner(verbosity=2).run(suite)

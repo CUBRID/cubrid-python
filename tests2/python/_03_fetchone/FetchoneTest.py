@@ -56,7 +56,7 @@ class FetchoneTest(unittest.TestCase):
                 self.cur.execute(sqlSelect)
                 for i in range(dataNum):
 			data = self.cur.fetchone()
-# 		        self.assertEquals(i+1, locale.atoi(data[0]))
+#		        self.assertEquals(i+1, locale.atoi(data[0]))
 		        self.assertEquals(i+1, data[0])
 
         def test_fetchone_norecord(self):

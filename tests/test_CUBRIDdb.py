@@ -6,21 +6,10 @@ import time
 import sys
 import decimal
 import datetime
-from xml.dom import minidom
 
 class DBAPI20Test(unittest.TestCase):
     driver = CUBRIDdb
-    
-    xmlt = minidom.parse('python_config.xml')
-    ips = xmlt.childNodes[0].getElementsByTagName('ip')
-    ip = ips[0].childNodes[0].toxml()
-    ports = xmlt.childNodes[0].getElementsByTagName('port')
-    port = ports[0].childNodes[0].toxml()
-    dbnames = xmlt.childNodes[0].getElementsByTagName('dbname')
-    dbname = dbnames[0].childNodes[0].toxml()
-    conStr = "CUBRID:"+ip+":"+port+":"+dbname+":::"
-    
-    connect_args = (conStr, 'dba', '')
+    connect_args = ('CUBRID:localhost:33000:demodb:::', 'public', '')
     connect_kw_args = {}
     connect_kw_args2 = {'charset': 'utf8'}
 
@@ -690,9 +679,6 @@ def suite():
 if __name__ == '__main__':
     #unittest.main(defaultTest = 'suite')
     #unittest.main()
-    log_file = 'test_CUBRIDdb.result'
-    f = open(log_file, "w")
     suite = unittest.TestLoader().loadTestsFromTestCase(DBAPI20Test)
-    unittest.TextTestRunner(verbosity=2, stream=f).run(suite)
-    f.close()
+    unittest.TextTestRunner(verbosity=2).run(suite)
 

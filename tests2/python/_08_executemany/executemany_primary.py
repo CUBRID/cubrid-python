@@ -90,7 +90,7 @@ class ExecuteManyPrimaryTest(unittest.TestCase):
                 except Exception,e:
                    value=str(e)
                    print value
-                self.assertEqual(value[1:5],'-924')
+                self.assertEqual(value,'(-924, "ERROR: DBMS, -924, Update/Delete operations are restricted by the foreign key \'fk_foreign_tb_album\'.")')
                 self.cursor.execute( "select * from primary_tb ")
                 self.row_sl=self.cursor.fetchall()
                 for self.value in self.row_sl:

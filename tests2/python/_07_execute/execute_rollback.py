@@ -27,8 +27,8 @@ class RollbackTest(unittest.TestCase):
                 self.cur.execute("INSERT INTO issue (name,nameid,age) VALUES('Mike',1,30),('John',2,28),('Bill',3,45)")
                 self.con.commit()
         def tearDown(self):
-                self.cur.close()
-                self.con.close()
+                self.cur.close
+                self.con.close
 
         def test_01rollback(self):
                 print "\nstatement is right"
