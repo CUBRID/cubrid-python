@@ -1,15 +1,35 @@
+
+from distutils.core import setup, Extension 
 import os
-import sys
+import platform
 
-if sys.version > '3':
-    setup_file = "setup_3.py"
+if os.environ["CUBRID"]:
+    lnk_dir = os.environ["CUBRID"] + "/lib"
+    inc_dir = os.environ["CUBRID"] + "/include"
 else:
-    setup_file = "setup_2.py"
+    raise KeyError
 
-version = "10.0.0.0001"
+setup(
+    name = "CUBRID-Python", 
+    version = "8.4.2.0001",
+    description = "Python interface to CUBRID",
+    long_description = \
+            "Python interface to CUBRID conforming to the python DB API 2.0 "
+            "specification.\n"
+            "See http://www.python.org/topics/database/DatabaseAPI-2.0.html.",
+    py_modules=["_cubrid_exceptions", "CUBRIDdb.connections", "CUBRIDdb.cursors", "CUBRIDdb.FIELD_TYPE"],
+    author = "zhanghui",
+    author_email = "zhanghui@nhn.com",
+    license = "BSD",
+    url = "https://cubridinterface.svn.sourceforge.net/svnroot/cubridinterface/python",
+    ext_modules=[
+        Extension(
+            name = "_cubrid", 
+            library_dirs = [lnk_dir],
+            libraries = ["cascci"],
+            include_dirs = [inc_dir],
+            sources = ['python_cubrid.c'],
+        )
+    ] 
+)
 
-#os.system(setup_file)
-setup_fh = open(setup_file)
-setup_content = setup_fh.read()
-setup_fh.close()
-exec(setup_content)

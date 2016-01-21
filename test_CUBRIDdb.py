@@ -1,18 +1,10 @@
 import unittest
 import CUBRIDdb
 import time
-from xml.dom import minidom
+
 class DBAPI20Test(unittest.TestCase):
     driver = CUBRIDdb
-    xmlt = minidom.parse('configuration/python_config.xml')
-    ips = xmlt.childNodes[0].getElementsByTagName('ip')
-    ip = ips[0].childNodes[0].toxml()
-    ports = xmlt.childNodes[0].getElementsByTagName('port')
-    port = ports[0].childNodes[0].toxml()
-    dbnames = xmlt.childNodes[0].getElementsByTagName('dbname')
-    dbname = dbnames[0].childNodes[0].toxml()
-    conStr = "CUBRID:"+ip+":"+port+":"+dbname+":::"   
-    connect_args = (conStr, 'dba','')
+    connect_args = ('CUBRID:localhost:33000:demodb', 'public')
     connect_kw_args = {}
     table_prefix = 'dbapi20test_'
 
@@ -28,19 +20,25 @@ class DBAPI20Test(unittest.TestCase):
         cursor.execute(self.ddl2)
 
     def setup(self):
-	print "setup... "	
+        pass
 
     def tearDown(self):
-        con = self._connect()
-        cur = con.cursor()
-        cur.execute(self.xddl1)
-        cur.execute(self.xddl2)
+        pass
+
+    def _check_table_exist(self, connect):
+        cursor = connect.cursor()
+        cursor.execute(self.xddl1)
+        cursor.execute(self.xddl2)
+        connect.commit()
+        cursor.close()
 
     def _connect(self):
         try:
-            return self.driver.connect(
+            con = self.driver.connect(
                     *self.connect_args, **self.connect_kw_args
                     )
+            self._check_table_exist(con)
+            return con
         except AttributeError:
             self.fail("No connect method found in self.driver module")
 
@@ -71,6 +69,7 @@ class DBAPI20Test(unittest.TestCase):
     def test_Exceptions(self):
         # Make sure required exceptions exist, and are in the
         # defined heirarchy.
+        self.failUnless(issubclass(self.driver.Warning, Exception))
         self.failUnless(issubclass(self.driver.Error, Exception))
         self.failUnless(
                 issubclass(self.driver.InterfaceError, self.driver.Error)
@@ -78,7 +77,21 @@ class DBAPI20Test(unittest.TestCase):
         self.failUnless(
                 issubclass(self.driver.DatabaseError,self.driver.Error)
                 )
-
+        self.failUnless(
+                issubclass(self.driver.OperationalError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.IntegrityError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.InternalError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.ProgrammingError,self.driver.Error)
+                )
+        self.failUnless(
+                issubclass(self.driver.NotSupportedError,self.driver.Error)
+                )
 
     def test_commit(self):
         con = self._connect()
