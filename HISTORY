@@ -1,3 +1,6 @@
+The Changes in newer versions can be found Here:
+http://www.cubrid.org/wiki_apis/entry/cubrid-python-driver-release-notes
+
 Change from 8.4.1.0001 to 8.4.0.0001
  1. APIS-91 - Fetchone get numeric data's type is not correct
  2. APIS-93 - The format of Cubrid Date/Time/Timestamp string are different from Python's

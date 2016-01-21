@@ -1,15 +1,48 @@
+
+from distutils.core import setup, Extension 
+
 import os
 import sys
+import platform
 
-if sys.version > '3':
-    setup_file = "setup_3.py"
+if os.environ["CUBRID"]:
+    lnk_dir = os.environ["CUBRID"] + "/lib"
+    inc_dir = os.environ["CUBRID"] + "/include"
 else:
-    setup_file = "setup_2.py"
+    raise KeyError
 
-version = "10.0.0.0001"
+if sys.version_info[0] == 2 and sys.version_info[1] >= 5:
+    py_modules = [
+        "CUBRIDdb.connections", "CUBRIDdb.cursors", "CUBRIDdb.FIELD_TYPE",
+        "django_cubrid.base", "django_cubrid.client", "django_cubrid.compiler", 
+        "django_cubrid.creation", "django_cubrid.introspection", "django_cubrid.validation",
+        ]
+else:
+    py_modules = ["CUBRIDdb.connections", "CUBRIDdb.cursors", "CUBRIDdb.FIELD_TYPE"]
 
-#os.system(setup_file)
-setup_fh = open(setup_file)
-setup_content = setup_fh.read()
-setup_fh.close()
-exec(setup_content)
+# Install CUBRID-Python driver.
+setup(
+    name = "CUBRID-Python", 
+    version = "8.4.3.0004",
+    description = "Python interface to CUBRID",
+    long_description = \
+            "Python interface to CUBRID conforming to the python DB API 2.0 "
+            "specification.\n"
+            "See http://www.python.org/topics/database/DatabaseAPI-2.0.html.",
+    py_modules = py_modules,
+    author = "Li Jinhu, Li Lin, Zhang hui",
+    author_email = "beagem@nhn.com",
+    license = "BSD",
+    url = "http://svn.cubrid.org/cubridapis/python/",
+    ext_modules=[
+        Extension(
+            name = "_cubrid", 
+            library_dirs = [lnk_dir],
+            libraries = ["cascci"],
+            include_dirs = [inc_dir],
+            sources = ['python_cubrid.c'],
+        )
+    ] 
+)
+
+

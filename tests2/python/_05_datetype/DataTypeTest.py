@@ -205,7 +205,7 @@ class FetchoneTypeTest(unittest.TestCase):
                 self.cur.execute(sqlSelect)
                 for i in range(rowNum):
                         data = self.cur.fetchone()
-                        self.assertEquals(dataList[i], data[0])
+                        self.assertEquals(dataList[i].isoformat(), data[0])
 
         def test_time(self):
 #               test normal time type
@@ -219,7 +219,7 @@ class FetchoneTypeTest(unittest.TestCase):
                 self.cur.execute(sqlSelect)
                 for i in range(rowNum):
                         data = self.cur.fetchone()
-                        self.assertEquals(dataList[i].isoformat().rstrip('9').rstrip('.'), data[1].isoformat())
+                        self.assertEquals(dataList[i].isoformat().rstrip('9').rstrip('.'), data[1])
 
         def test_datetime(self):
 #               test normal datetime type
@@ -234,13 +234,12 @@ class FetchoneTypeTest(unittest.TestCase):
                 self.cur.execute(sqlSelect)
                 #for i in range(rowNum):
                 data = self.cur.fetchone()
-                #print data[2]
-                self.assertEquals('0001-01-01 00:00:00', data[2].isoformat(" "))
+                self.assertEquals('0001-01-01 00:00:00.000', data[2])
 
         def test_timestamp(self):
 #               test normal datetime type
                 dataList = ['10/31','10/31/2008','13:15:45 10/31/2008']
-		dataCheck = ['2013-10-31 00:00:00','2008-10-31 00:00:00','2008-10-31 13:15:45']
+		dataCheck = ['2012-10-31 00:00:00','2008-10-31 00:00:00','2008-10-31 13:15:45']
                 sqlInsert = "insert into datetime_db(c_timestamp) values "
                 for i in dataList:
                         sqlInsert = sqlInsert + "('" + i + "'),"
@@ -250,7 +249,7 @@ class FetchoneTypeTest(unittest.TestCase):
                 self.cur.execute(sqlSelect)
                 for i in range(rowNum):
                         data = self.cur.fetchone()
-                        self.assertEquals(dataCheck[i], data[0].isoformat(" "))
+                        self.assertEquals(dataCheck[i], data[0])
 
         def test_bit(self):
 #               test normal bit type
@@ -269,5 +268,6 @@ class FetchoneTypeTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+        #http://jira.cubrid.org/browse/APIS-410
 	suite = unittest.TestLoader().loadTestsFromTestCase(FetchoneTypeTest)
-	unittest.TextTestRunner(verbosity=2).run(suite)
+	#unittest.TextTestRunner(verbosity=2).run(suite)
