@@ -163,8 +163,8 @@ class DatabaseTest(unittest.TestCase):
     def test_isolation_level(self):
         con = self._connect()
         try:
-            con.set_isolation_level(CUBRID_REP_CLASS_UNCOMMIT_INSTANCE)
-            self.assertEqual(con.isolation_level, 'CUBRID_REP_CLASS_UNCOMMIT_INSTANCE',
+            con.set_isolation_level(CUBRID_REP_CLASS_COMMIT_INSTANCE)
+            self.assertEqual(con.isolation_level, 'CUBRID_REP_CLASS_COMMIT_INSTANCE',
                     'connection.set_isolation_level does not work')
         finally:
             con.close()
