@@ -23,8 +23,7 @@ Abstract
 
 Project URL
 ===========
-  * Project Home: http://www.cubrid.org/wiki_apis/entry/cubrid-python-driver
-  * Project svn: https://cubridinterface.svn.sourceforge.net/svnroot/cubridinterface/python
+  * Project Home: https://github.com/CUBRID/cubrid-python
 
 Dependencies for CUBRIDdb
 =========================
@@ -45,10 +44,6 @@ Install for CUBRIDdb
     > python setup.py build
     > python setup.py install
 
-  For more detailed information, please refer to the below url:
-  http://www.cubrid.org/wiki_apis/entry/cubrid-python-driver-installation-instructions
-  http://www.cubrid.org/wiki_apis/entry/install-python-development-package
-
 Documents
 =========
   * See Python DB API 2.0 Spec (http://www.python.org/dev/peps/pep-0249/)
@@ -65,6 +60,3 @@ Abstract
   Django_cubrid is the Django backend for CUBRID Database.
 
   Please refer to README_django_cubrid for more information.
-
-  URL:
-  http://www.cubrid.org/wiki_apis/entry/how-to-use-django-with-cubrid
