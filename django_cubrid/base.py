@@ -82,6 +82,12 @@ class CursorWrapper(object):
     def __iter__(self):
         return iter(self.cursor)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.close()
+
 
 class DatabaseFeatures(BaseDatabaseFeatures):
 
