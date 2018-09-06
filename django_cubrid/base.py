@@ -453,7 +453,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     def init_connection_state(self):
         pass
 
-    def create_cursor(self):
+    def create_cursor(self, name=None):
         if not self._valid_connection():
             self.connection = self.get_new_connection(None)
             connection_created.send(sender=self.__class__, connection=self)
