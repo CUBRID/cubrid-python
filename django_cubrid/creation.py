@@ -132,7 +132,7 @@ class DatabaseCreation(BaseDatabaseCreation):
             subprocess.call(start_command)
             print('Started')
 
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Got an error creating the test database: %s\n" % e)
             if not autoclobber:
                 confirm = raw_input("Type 'yes' if you would like to try deleting the test database '%s', or 'no' to cancel: " % test_database_name)
@@ -146,7 +146,7 @@ class DatabaseCreation(BaseDatabaseCreation):
                         print("Creating test database...")
                         subprocess.call(create_command)
                         subprocess.call(start_command)
-                except Exception, e:
+                except Exception as e:
                     sys.stderr.write("Got an error recreating the test database: %s\n" % e)
                     sys.exit(2)
             else:

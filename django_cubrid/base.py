@@ -12,9 +12,11 @@ import warnings
 try:
     import CUBRIDdb as Database
     from CUBRIDdb import FIELD_TYPE
-except ImportError, e:
+except ImportError as e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured("Error loading CUBRIDdb module: %s" % e)
+
+import django.db.utils
 
 from django.db.backends import *
 from django.db.backends.signals import connection_created
@@ -25,13 +27,23 @@ from django_cubrid.validation import DatabaseValidation
 from django.utils import timezone
 from django.conf import settings
 if django.VERSION >= (1, 7) and django.VERSION < (1, 8):
-    from schema import DatabaseSchemaEditor
+    from django_cubrid.schema import DatabaseSchemaEditor
 elif django.VERSION >= (1, 8):
-    from schema import DatabaseSchemaEditor
+    from django_cubrid.schema import DatabaseSchemaEditor
     from django.db.backends.base.base import BaseDatabaseWrapper
     from django.db.backends.base.features import BaseDatabaseFeatures
     from django.db.backends.base.operations import BaseDatabaseOperations
     from django.utils.functional import cached_property
+
+
+"""
+Takes a CUBRID exception and raises the Django equivalent.
+"""
+def raise_django_exception(e):
+    cubrid_exc_type = type(e)
+    django_exc_type = getattr(django.db.utils,
+        cubrid_exc_type.__name__, django.db.utils.Error)
+    raise django_exc_type(*tuple(e.args))
 
 
 class CursorWrapper(object):
@@ -50,7 +62,7 @@ class CursorWrapper(object):
             return self.cursor.execute(query, args)
 
         except Exception as e:
-            raise sys.exc_info()[0], e.message, sys.exc_info()[2]
+            raise_django_exception(e)
 
     def executemany(self, query, args):
         try:
@@ -59,7 +71,7 @@ class CursorWrapper(object):
 
             return self.cursor.executemany(query, args)
         except Exception as e:
-            raise sys.exc_info()[0], e.message, sys.exc_info()[2]
+            raise_django_exception(e)
 
     def __getattr__(self, attr):
         if attr in self.__dict__:
