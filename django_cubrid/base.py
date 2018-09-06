@@ -385,18 +385,28 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         }
         SchemaEditorClass = DatabaseSchemaEditor
 
+    if django.VERSION >= (1, 11):
+        client_class = DatabaseClient
+        creation_class = DatabaseCreation
+        features_class = DatabaseFeatures
+        introspection_class = DatabaseIntrospection
+        ops_class = DatabaseOperations
+        validation_class = DatabaseValidation
+
     Database = Database
 
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
 
         self.server_version = None
-        self.features = DatabaseFeatures(self)
-        self.ops = DatabaseOperations(self)
-        self.client = DatabaseClient(self)
-        self.creation = DatabaseCreation(self)
-        self.introspection = DatabaseIntrospection(self)
-        self.validation = DatabaseValidation(self)
+
+        if django.VERSION < (1, 11):
+            self.features = DatabaseFeatures(self)
+            self.ops = DatabaseOperations(self)
+            self.client = DatabaseClient(self)
+            self.creation = DatabaseCreation(self)
+            self.introspection = DatabaseIntrospection(self)
+            self.validation = DatabaseValidation(self)
 
     if django.VERSION >= (1, 8):
         @cached_property
