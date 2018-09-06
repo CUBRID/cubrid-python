@@ -14,36 +14,6 @@ TEST_DATABASE_PREFIX = 'test_'
 
 
 class DatabaseCreation(BaseDatabaseCreation):
-    # This dictionary maps Field objects to their associated CUBRID column
-    # types, as strings. Column-type strings can contain format strings; they'll
-    # be interpolated against the values of Field.__dict__ before being output.
-    # If a column type is set to None, it won't be included in the output.
-    data_types = {
-        'AutoField':         'integer AUTO_INCREMENT',
-        'BinaryField':       'BLOB',
-        'BooleanField':      'smallint',
-        'CharField':         'varchar(%(max_length)s)',
-        'CommaSeparatedIntegerField': 'varchar(%(max_length)s)',
-        'DateField':         'date',
-        'DateTimeField':     'datetime',
-        'DecimalField':      'numeric(%(max_digits)s, %(decimal_places)s)',
-        'FileField':         'varchar(%(max_length)s)',
-        'FilePathField':     'varchar(%(max_length)s)',
-        'FloatField':        'double precision',
-        'IntegerField':      'integer',
-        'BigIntegerField':   'bigint',
-        'IPAddressField':    'varchar(15)',
-        'GenericIPAddressField':    'varchar(39)',
-        'NullBooleanField':  'smallint',
-        'OneToOneField':     'integer',
-        'PositiveIntegerField': 'integer',
-        'PositiveSmallIntegerField': 'smallint',
-        'SlugField':         'varchar(%(max_length)s)',
-        'SmallIntegerField': 'smallint',
-        'TextField':         'string',
-        'TimeField':         'time',
-    }
-
     if django.VERSION < (1, 6):
         def sql_for_inline_foreign_key_references(self, field, known_models, style):
             "Return the SQL snippet defining the foreign key reference for a field"
