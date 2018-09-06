@@ -128,9 +128,9 @@ class DatabaseCreation(BaseDatabaseCreation):
 
         try:
             subprocess.call(create_command)
-            print 'Created'
+            print('Created')
             subprocess.call(start_command)
-            print 'Started'
+            print('Started')
 
         except Exception, e:
             sys.stderr.write("Got an error creating the test database: %s\n" % e)
@@ -139,18 +139,18 @@ class DatabaseCreation(BaseDatabaseCreation):
             if autoclobber or confirm == 'yes':
                 try:
                     if verbosity >= 1:
-                        print "Destroying old test database..."
+                        print("Destroying old test database...")
                         subprocess.call(stop_command)
                         subprocess.call(delete_command)
 
-                        print "Creating test database..."
+                        print("Creating test database...")
                         subprocess.call(create_command)
                         subprocess.call(start_command)
                 except Exception, e:
                     sys.stderr.write("Got an error recreating the test database: %s\n" % e)
                     sys.exit(2)
             else:
-                print "Tests cancelled."
+                print( "Tests cancelled.")
                 sys.exit(1)
 
         return test_database_name
@@ -173,7 +173,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         database already exists. Returns the name of the test database created.
         """
         if verbosity >= 1:
-            print "Destroying test database '%s'..." % self.connection.alias
+            print("Destroying test database '%s'..." % self.connection.alias)
         self.connection.close()
         test_database_name = self.connection.settings_dict['NAME']
         self.connection.settings_dict['NAME'] = old_database_name
