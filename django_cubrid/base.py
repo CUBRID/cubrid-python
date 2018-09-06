@@ -251,7 +251,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         # So convert it to int if possible.
         # I think LAST_INSERT_ID should be modified
         # to return appropriate column type value.
-        if result[0] < sys.maxint:
+        if result[0] < sys.maxsize:
             return int(result[0])
 
         return result[0]
