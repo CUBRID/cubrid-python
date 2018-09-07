@@ -85,8 +85,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         """
         # Special-case implicit M2M tables
         if ((isinstance(field, ManyToManyField) or field.get_internal_type() == 'ManyToManyField') and
-                field.rel.through._meta.auto_created):
-            return self.create_model(field.rel.through)
+                field.remote_field.through._meta.auto_created):
+            return self.create_model(field.remote_field.through)
         # Get the column's definition
         definition, params = self.column_sql(model, field, include_default=True)
         # It might not actually have a column behind it
@@ -108,7 +108,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         if field.db_index and not field.unique:
             self.deferred_sql.append(self._create_index_sql(model, [field]))
         # Add any FK constraints later
-        if field.rel and self.connection.features.supports_foreign_keys and field.db_constraint:
+        if field.is_relation and self.connection.features.supports_foreign_keys and field.db_constraint:
             self.deferred_sql.append(self._create_fk_sql(model, field, "_fk_%(to_table)s_%(to_column)s"))
         # Reset connection if required
         if self.connection.features.connection_persists_old_columns:
