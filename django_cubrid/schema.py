@@ -49,6 +49,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         default_value = self.effective_default(field)
         include_default = include_default and not self.skip_default(field)
         if include_default and default_value is not None:
+            if field.get_internal_type() == "BooleanField" and isinstance(default_value, bool):
+                default_value = 1 if default_value else 0
             if self.connection.features.requires_literal_defaults:
                 # Some databases can't take defaults as a parameter (oracle)
                 # If this is the case, the individual schema backend should

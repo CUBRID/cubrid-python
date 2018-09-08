@@ -328,6 +328,18 @@ class DatabaseOperations(BaseDatabaseOperations):
             values_sql = ", ".join("({0})".format(sql) for sql in placeholder_rows_sql)
             return "VALUES " + values_sql
 
+    def get_db_converters(self, expression):
+        converters = super().get_db_converters(expression)
+        internal_type = expression.output_field.get_internal_type()
+        if internal_type in ["BooleanField", "NullBooleanField"]:
+            converters.append(self.convert_booleanfield_value)
+        return converters
+
+    def convert_booleanfield_value(self, value, expression, connection):
+        if value in (0, 1):
+            value = bool(value)
+        return value
+
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'cubrid'
