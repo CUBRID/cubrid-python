@@ -315,6 +315,15 @@ class DatabaseOperations(BaseDatabaseOperations):
         second = '%s-12-31 23:59:59.99'
         return [first % value, second % value]
 
+    def lookup_cast(self, lookup_type, internal_type=None):
+        lookup = '%s'
+
+        # Use UPPER(x) for case-insensitive lookups.
+        if lookup_type in ('iexact', 'icontains', 'istartswith', 'iendswith'):
+            lookup = 'UPPER(%s)' % lookup
+
+        return lookup
+
     def max_name_length(self):
         return 64
 
@@ -343,30 +352,42 @@ class DatabaseOperations(BaseDatabaseOperations):
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'cubrid'
-    # Operators taken from MySQL implementation.
+    # Operators taken from PosgreSQL implementation.
     # Check for differences between this syntax and CUBRID's.
     operators = {
         'exact': '= %s',
-        # CUBRID does not support "iexact" operator.
-        # We will use "=" operator(case sensitive exact)
-        # to prevent a syntax error in contrib.auth application.
-        'iexact': '= %s',
+        'iexact': '= UPPER(%s)',
         'contains': 'LIKE %s',
-        'icontains': 'iLIKE %s',
-        # not supported. causes syntax error.
-        'regex': 'REGEXP BINARY %s',
-        'iregex': 'REGEXP %s',
+        'icontains': 'LIKE UPPER(%s)',
         'gt': '> %s',
         'gte': '>= %s',
         'lt': '< %s',
         'lte': '<= %s',
         'startswith': 'LIKE %s',
         'endswith': 'LIKE %s',
-        # not supported. causes syntax error.
-        'istartswith': 'iLIKE %s',
-        # not supported. causes syntax error.
-        'iendswith': 'iLIKE %s',
-        }
+        'istartswith': 'LIKE UPPER(%s)',
+        'iendswith': 'LIKE UPPER(%s)',
+        'regex': 'REGEXP BINARY %s',
+        'iregex': 'REGEXP %s',
+    }
+    # Patterns taken from PosgreSQL implementation.
+    # The patterns below are used to generate SQL pattern lookup clauses when
+    # the right-hand side of the lookup isn't a raw string (it might be an expression
+    # or the result of a bilateral transformation).
+    # In those cases, special characters for LIKE operators (e.g. \, *, _) should be
+    # escaped on database side.
+    #
+    # Note: we use str.format() here for readability as '%' is used as a wildcard for
+    # the LIKE operator.
+    pattern_esc = r"REPLACE(REPLACE(REPLACE({}, '\', '\\'), '%%', '\%%'), '_', '\_')"
+    pattern_ops = {
+        'contains': "LIKE '%%' || {} || '%%'",
+        'icontains': "LIKE '%%' || UPPER({}) || '%%'",
+        'startswith': "LIKE {} || '%%'",
+        'istartswith': "LIKE UPPER({}) || '%%'",
+        'endswith': "LIKE '%%' || {}",
+        'iendswith': "LIKE '%%' || UPPER({})",
+    }
     if django.VERSION >= (1, 8):
         _data_types = {
             'AutoField': 'integer AUTO_INCREMENT',
