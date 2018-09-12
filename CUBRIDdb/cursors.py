@@ -26,7 +26,7 @@ class BaseCursor(object):
 
     def __del__(self):
         try:
-            if self._cs is not None:
+            if self._cs:
                 self.close()
         except AttributeError:   # self._cs not exists
             pass
@@ -48,7 +48,7 @@ class BaseCursor(object):
             args = [args,]
         args = list(args)
         for i in range(len(args)):
-            if args[i] is None:
+            if args[i] == None:
                 pass
             elif isinstance(args[i], bool):
                 if args[i] == True:
@@ -77,7 +77,7 @@ class BaseCursor(object):
             if type(args[i]) != tuple:
                 self._cs.bind_param(i+1, args[i])
             else:
-                if set_type is None:
+                if set_type == None:
                     data_type = int(FIELD_TYPE.CHAR)
                 else:
                     if type(set_type) != tuple:
@@ -173,7 +173,7 @@ class BaseCursor(object):
         The method should try to fetch as many rows as indicated by the size parameter. If this is not possible due to the specified number of rows not being available, fewer rows may be returned.
         """
         self.__check_state()
-        if size is None:
+        if size == None:
             size = self.arraysize
         if size <= 0:
             return []
