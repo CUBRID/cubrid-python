@@ -12,11 +12,9 @@ import warnings
 try:
     import CUBRIDdb as Database
     from CUBRIDdb import FIELD_TYPE
-except ImportError as e:
+except ImportError, e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured("Error loading CUBRIDdb module: %s" % e)
-
-import django.db.utils
 
 from django.db.backends import *
 from django.db.backends.signals import connection_created
@@ -27,23 +25,13 @@ from django_cubrid.validation import DatabaseValidation
 from django.utils import timezone
 from django.conf import settings
 if django.VERSION >= (1, 7) and django.VERSION < (1, 8):
-    from django_cubrid.schema import DatabaseSchemaEditor
+    from schema import DatabaseSchemaEditor
 elif django.VERSION >= (1, 8):
-    from django_cubrid.schema import DatabaseSchemaEditor
+    from schema import DatabaseSchemaEditor
     from django.db.backends.base.base import BaseDatabaseWrapper
     from django.db.backends.base.features import BaseDatabaseFeatures
     from django.db.backends.base.operations import BaseDatabaseOperations
     from django.utils.functional import cached_property
-
-
-"""
-Takes a CUBRID exception and raises the Django equivalent.
-"""
-def raise_django_exception(e):
-    cubrid_exc_type = type(e)
-    django_exc_type = getattr(django.db.utils,
-        cubrid_exc_type.__name__, django.db.utils.Error)
-    raise django_exc_type(*tuple(e.args))
 
 
 class CursorWrapper(object):
@@ -62,7 +50,7 @@ class CursorWrapper(object):
             return self.cursor.execute(query, args)
 
         except Exception as e:
-            raise_django_exception(e)
+            raise sys.exc_info()[0], e.message, sys.exc_info()[2]
 
     def executemany(self, query, args):
         try:
@@ -71,7 +59,7 @@ class CursorWrapper(object):
 
             return self.cursor.executemany(query, args)
         except Exception as e:
-            raise_django_exception(e)
+            raise sys.exc_info()[0], e.message, sys.exc_info()[2]
 
     def __getattr__(self, attr):
         if attr in self.__dict__:
@@ -81,12 +69,6 @@ class CursorWrapper(object):
 
     def __iter__(self):
         return iter(self.cursor)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        self.close()
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -257,7 +239,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         # So convert it to int if possible.
         # I think LAST_INSERT_ID should be modified
         # to return appropriate column type value.
-        if result[0] < sys.maxsize:
+        if result[0] < sys.maxint:
             return int(result[0])
 
         return result[0]
@@ -315,79 +297,40 @@ class DatabaseOperations(BaseDatabaseOperations):
         second = '%s-12-31 23:59:59.99'
         return [first % value, second % value]
 
-    def lookup_cast(self, lookup_type, internal_type=None):
-        lookup = '%s'
-
-        # Use UPPER(x) for case-insensitive lookups.
-        if lookup_type in ('iexact', 'icontains', 'istartswith', 'iendswith'):
-            lookup = 'UPPER(%s)' % lookup
-
-        return lookup
-
     def max_name_length(self):
         return 64
 
-    if django.VERSION < (1, 9):
-        def bulk_insert_sql(self, fields, num_values):
-            items_sql = "(%s)" % ", ".join(["%s"] * len(fields))
-            return "VALUES " + ", ".join([items_sql] * num_values)
-    else:
-        def bulk_insert_sql(self, fields, placeholder_rows):
-            placeholder_rows_sql = (", ".join(row) for row in placeholder_rows)
-            values_sql = ", ".join("({0})".format(sql) for sql in placeholder_rows_sql)
-            return "VALUES " + values_sql
-
-    def get_db_converters(self, expression):
-        converters = super().get_db_converters(expression)
-        internal_type = expression.output_field.get_internal_type()
-        if internal_type in ["BooleanField", "NullBooleanField"]:
-            converters.append(self.convert_booleanfield_value)
-        return converters
-
-    def convert_booleanfield_value(self, value, expression, connection):
-        if value in (0, 1):
-            value = bool(value)
-        return value
+    def bulk_insert_sql(self, fields, num_values):
+        items_sql = "(%s)" % ", ".join(["%s"] * len(fields))
+        return "VALUES " + ", ".join([items_sql] * num_values)
 
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'cubrid'
-    # Operators taken from PosgreSQL implementation.
+    # Operators taken from MySQL implementation.
     # Check for differences between this syntax and CUBRID's.
     operators = {
         'exact': '= %s',
-        'iexact': '= UPPER(%s)',
+        # CUBRID does not support "iexact" operator.
+        # We will use "=" operator(case sensitive exact)
+        # to prevent a syntax error in contrib.auth application.
+        'iexact': '= %s',
         'contains': 'LIKE %s',
-        'icontains': 'LIKE UPPER(%s)',
+        'icontains': 'iLIKE %s',
+        # not supported. causes syntax error.
+        'regex': 'REGEXP BINARY %s',
+        'iregex': 'REGEXP %s',
         'gt': '> %s',
         'gte': '>= %s',
         'lt': '< %s',
         'lte': '<= %s',
         'startswith': 'LIKE %s',
         'endswith': 'LIKE %s',
-        'istartswith': 'LIKE UPPER(%s)',
-        'iendswith': 'LIKE UPPER(%s)',
-        'regex': 'REGEXP BINARY %s',
-        'iregex': 'REGEXP %s',
-    }
-    # Patterns taken from PosgreSQL implementation.
-    # The patterns below are used to generate SQL pattern lookup clauses when
-    # the right-hand side of the lookup isn't a raw string (it might be an expression
-    # or the result of a bilateral transformation).
-    # In those cases, special characters for LIKE operators (e.g. \, *, _) should be
-    # escaped on database side.
-    #
-    # Note: we use str.format() here for readability as '%' is used as a wildcard for
-    # the LIKE operator.
-    pattern_esc = r"REPLACE(REPLACE(REPLACE({}, '\', '\\'), '%%', '\%%'), '_', '\_')"
-    pattern_ops = {
-        'contains': "LIKE '%%' || {} || '%%'",
-        'icontains': "LIKE '%%' || UPPER({}) || '%%'",
-        'startswith': "LIKE {} || '%%'",
-        'istartswith': "LIKE UPPER({}) || '%%'",
-        'endswith': "LIKE '%%' || {}",
-        'iendswith': "LIKE '%%' || UPPER({})",
-    }
+        # not supported. causes syntax error.
+        'istartswith': 'iLIKE %s',
+        # not supported. causes syntax error.
+        'iendswith': 'iLIKE %s',
+        }
     if django.VERSION >= (1, 8):
         _data_types = {
             'AutoField': 'integer AUTO_INCREMENT',
@@ -418,28 +361,18 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         }
         SchemaEditorClass = DatabaseSchemaEditor
 
-    if django.VERSION >= (1, 11):
-        client_class = DatabaseClient
-        creation_class = DatabaseCreation
-        features_class = DatabaseFeatures
-        introspection_class = DatabaseIntrospection
-        ops_class = DatabaseOperations
-        validation_class = DatabaseValidation
-
     Database = Database
 
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
 
         self.server_version = None
-
-        if django.VERSION < (1, 11):
-            self.features = DatabaseFeatures(self)
-            self.ops = DatabaseOperations(self)
-            self.client = DatabaseClient(self)
-            self.creation = DatabaseCreation(self)
-            self.introspection = DatabaseIntrospection(self)
-            self.validation = DatabaseValidation(self)
+        self.features = DatabaseFeatures(self)
+        self.ops = DatabaseOperations(self)
+        self.client = DatabaseClient(self)
+        self.creation = DatabaseCreation(self)
+        self.introspection = DatabaseIntrospection(self)
+        self.validation = DatabaseValidation(self)
 
     if django.VERSION >= (1, 8):
         @cached_property
@@ -496,7 +429,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     def init_connection_state(self):
         pass
 
-    def create_cursor(self, name=None):
+    def create_cursor(self):
         if not self._valid_connection():
             self.connection = self.get_new_connection(None)
             connection_created.send(sender=self.__class__, connection=self)

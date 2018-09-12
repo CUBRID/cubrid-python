@@ -14,6 +14,36 @@ TEST_DATABASE_PREFIX = 'test_'
 
 
 class DatabaseCreation(BaseDatabaseCreation):
+    # This dictionary maps Field objects to their associated CUBRID column
+    # types, as strings. Column-type strings can contain format strings; they'll
+    # be interpolated against the values of Field.__dict__ before being output.
+    # If a column type is set to None, it won't be included in the output.
+    data_types = {
+        'AutoField':         'integer AUTO_INCREMENT',
+        'BinaryField':       'BLOB',
+        'BooleanField':      'smallint',
+        'CharField':         'varchar(%(max_length)s)',
+        'CommaSeparatedIntegerField': 'varchar(%(max_length)s)',
+        'DateField':         'date',
+        'DateTimeField':     'datetime',
+        'DecimalField':      'numeric(%(max_digits)s, %(decimal_places)s)',
+        'FileField':         'varchar(%(max_length)s)',
+        'FilePathField':     'varchar(%(max_length)s)',
+        'FloatField':        'double precision',
+        'IntegerField':      'integer',
+        'BigIntegerField':   'bigint',
+        'IPAddressField':    'varchar(15)',
+        'GenericIPAddressField':    'varchar(39)',
+        'NullBooleanField':  'smallint',
+        'OneToOneField':     'integer',
+        'PositiveIntegerField': 'integer',
+        'PositiveSmallIntegerField': 'smallint',
+        'SlugField':         'varchar(%(max_length)s)',
+        'SmallIntegerField': 'smallint',
+        'TextField':         'string',
+        'TimeField':         'time',
+    }
+
     if django.VERSION < (1, 6):
         def sql_for_inline_foreign_key_references(self, field, known_models, style):
             "Return the SQL snippet defining the foreign key reference for a field"
@@ -98,29 +128,29 @@ class DatabaseCreation(BaseDatabaseCreation):
 
         try:
             subprocess.call(create_command)
-            print('Created')
+            print 'Created'
             subprocess.call(start_command)
-            print('Started')
+            print 'Started'
 
-        except Exception as e:
+        except Exception, e:
             sys.stderr.write("Got an error creating the test database: %s\n" % e)
             if not autoclobber:
                 confirm = raw_input("Type 'yes' if you would like to try deleting the test database '%s', or 'no' to cancel: " % test_database_name)
             if autoclobber or confirm == 'yes':
                 try:
                     if verbosity >= 1:
-                        print("Destroying old test database...")
+                        print "Destroying old test database..."
                         subprocess.call(stop_command)
                         subprocess.call(delete_command)
 
-                        print("Creating test database...")
+                        print "Creating test database..."
                         subprocess.call(create_command)
                         subprocess.call(start_command)
-                except Exception as e:
+                except Exception, e:
                     sys.stderr.write("Got an error recreating the test database: %s\n" % e)
                     sys.exit(2)
             else:
-                print( "Tests cancelled.")
+                print "Tests cancelled."
                 sys.exit(1)
 
         return test_database_name
@@ -143,7 +173,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         database already exists. Returns the name of the test database created.
         """
         if verbosity >= 1:
-            print("Destroying test database '%s'..." % self.connection.alias)
+            print "Destroying test database '%s'..." % self.connection.alias
         self.connection.close()
         test_database_name = self.connection.settings_dict['NAME']
         self.connection.settings_dict['NAME'] = old_database_name

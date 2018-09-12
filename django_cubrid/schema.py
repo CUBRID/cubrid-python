@@ -49,8 +49,6 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         default_value = self.effective_default(field)
         include_default = include_default and not self.skip_default(field)
         if include_default and default_value is not None:
-            if field.get_internal_type() == "BooleanField" and isinstance(default_value, bool):
-                default_value = 1 if default_value else 0
             if self.connection.features.requires_literal_defaults:
                 # Some databases can't take defaults as a parameter (oracle)
                 # If this is the case, the individual schema backend should
@@ -58,21 +56,20 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
                 sql += " DEFAULT %s" % self.prepare_default(default_value)
             else:
                 sql += " DEFAULT '%s'" % default_value
-        if not field.get_internal_type() in ("BinaryField",):
-            # Oracle treats the empty string ('') as null, so coerce the null
-            # option whenever '' is a possible value.
-            if (field.empty_strings_allowed and not field.primary_key and
-                    self.connection.features.interprets_empty_strings_as_nulls):
-                null = True
-            if null and not self.connection.features.implied_column_null:
-                sql += " NULL"
-            elif not null:
-                sql += " NOT NULL"
-            # Primary key/unique outputs
-            if field.primary_key:
-                sql += " PRIMARY KEY"
-            elif field.unique:
-                sql += " UNIQUE"
+        # Oracle treats the empty string ('') as null, so coerce the null
+        # option whenever '' is a possible value.
+        if (field.empty_strings_allowed and not field.primary_key and
+                self.connection.features.interprets_empty_strings_as_nulls):
+            null = True
+        if null and not self.connection.features.implied_column_null:
+            sql += " NULL"
+        elif not null:
+            sql += " NOT NULL"
+        # Primary key/unique outputs
+        if field.primary_key:
+            sql += " PRIMARY KEY"
+        elif field.unique:
+            sql += " UNIQUE"
         # Optionally add the tablespace if it's an implicitly indexed column
         tablespace = field.db_tablespace or model._meta.db_tablespace
         if tablespace and self.connection.features.supports_tablespaces and field.unique:
@@ -88,8 +85,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         """
         # Special-case implicit M2M tables
         if ((isinstance(field, ManyToManyField) or field.get_internal_type() == 'ManyToManyField') and
-                field.remote_field.through._meta.auto_created):
-            return self.create_model(field.remote_field.through)
+                field.rel.through._meta.auto_created):
+            return self.create_model(field.rel.through)
         # Get the column's definition
         definition, params = self.column_sql(model, field, include_default=True)
         # It might not actually have a column behind it
@@ -111,7 +108,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         if field.db_index and not field.unique:
             self.deferred_sql.append(self._create_index_sql(model, [field]))
         # Add any FK constraints later
-        if field.is_relation and self.connection.features.supports_foreign_keys and field.db_constraint:
+        if field.rel and self.connection.features.supports_foreign_keys and field.db_constraint:
             self.deferred_sql.append(self._create_fk_sql(model, field, "_fk_%(to_table)s_%(to_column)s"))
         # Reset connection if required
         if self.connection.features.connection_persists_old_columns:
