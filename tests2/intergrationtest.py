@@ -63,7 +63,7 @@ def generate_test_report(tests_list, log_file_name, testsuite_name):
         disabled = 0
         errors = 0
 
-        if testsuite_name == None:
+        if testsuite_name is None:
             testsuite_name = 'intergrationtest.CUBRID'
 
         # items:  testname status message
@@ -98,7 +98,7 @@ def generate_test_report(tests_list, log_file_name, testsuite_name):
                 fp.write('\t\t</testcase>\n')
             else:
                 fp.write('\t\t<testcase name="%s" status="failed" time="0" classname="%s">\n' % (testname, testsuite_name))
-                if message == None or message == '':
+                if message is None or message == '':
                     fp.write('\t\t\t<failure message="%s failed" type=""></failure>\n' % (testname))
                 else:
                     fp.write('\t\t\t<failure message="%s" type=""></failure>\n' % (message))
