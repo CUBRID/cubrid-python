@@ -7,6 +7,7 @@ Requires CUBRIDdb: http://www.cubrid.org/wiki_apis
 import re
 import sys
 import django
+import uuid
 import warnings
 
 try:
@@ -25,6 +26,7 @@ from django_cubrid.creation import DatabaseCreation
 from django_cubrid.introspection import DatabaseIntrospection
 from django_cubrid.validation import DatabaseValidation
 from django.utils import timezone
+from django.utils.encoding import force_text
 from django.conf import settings
 if django.VERSION >= (1, 7) and django.VERSION < (1, 8):
     from django_cubrid.schema import DatabaseSchemaEditor
@@ -340,13 +342,35 @@ class DatabaseOperations(BaseDatabaseOperations):
     def get_db_converters(self, expression):
         converters = super().get_db_converters(expression)
         internal_type = expression.output_field.get_internal_type()
-        if internal_type in ["BooleanField", "NullBooleanField"]:
+        if internal_type == 'TextField':
+            converters.append(self.convert_textfield_value)
+        elif internal_type in ['BooleanField', 'NullBooleanField']:
             converters.append(self.convert_booleanfield_value)
+        elif internal_type == 'DateTimeField':
+            if settings.USE_TZ:
+                converters.append(self.convert_datetimefield_value)
+        elif internal_type == 'UUIDField':
+            converters.append(self.convert_uuidfield_value)
         return converters
+
+    def convert_textfield_value(self, value, expression, connection):
+        if value is not None:
+            value = force_text(value)
+        return value
 
     def convert_booleanfield_value(self, value, expression, connection):
         if value in (0, 1):
             value = bool(value)
+        return value
+
+    def convert_datetimefield_value(self, value, expression, connection):
+        if value is not None:
+            value = timezone.make_aware(value, self.connection.timezone)
+        return value
+
+    def convert_uuidfield_value(self, value, expression, connection):
+        if value is not None:
+            value = uuid.UUID(value)
         return value
 
 
@@ -484,7 +508,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         url += ':::'
 
         con = Database.connect(url, user, passwd, charset='utf8')
-        con.set_fetch_value_converter(django_fetch_value_converter)
 
         return con
 
@@ -534,16 +557,3 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             return DatabaseSchemaEditor(self, *args, **kwargs)
 
 
-def django_fetch_value_converter(row, descriptor):
-    # We need to convert naive datetime values to aware, if USE_TZ is true.
-    if not settings.USE_TZ:
-        return row
-
-    index = 0
-    for des in descriptor:
-        if des[1] == FIELD_TYPE.DATETIME and timezone.is_naive(row[index]):
-            row[index] = row[index].replace(tzinfo=timezone.utc)
-
-        index = index + 1
-
-    return row
