@@ -54,7 +54,7 @@ class DatabaseCreation(BaseDatabaseCreation):
             return output, pending
 
     def sql_indexes_for_model(self, model, style):
-        """ 
+        """
         Returns the CREATE INDEX SQL statements for a single model.
         The reference coloum can't be indexed in CUBRID.
         """
@@ -70,11 +70,11 @@ class DatabaseCreation(BaseDatabaseCreation):
             output.extend(self.sql_indexes_for_fields(model, fields, style))
         return output
 
-    def _create_test_db(self, verbosity, autoclobber):
+    def _create_test_db(self, verbosity, autoclobber, keepdb=False):
         "Internal implementation - creates the test db tables."
         suffix = self.sql_table_creation_suffix()
 
-        if self.connection.settings_dict['TEST_NAME']:
+        if 'TEST_NAME' in self.connection.settings_dict:
             test_database_name = self.connection.settings_dict['TEST_NAME']
         else:
             test_database_name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
@@ -82,10 +82,19 @@ class DatabaseCreation(BaseDatabaseCreation):
         qn = self.connection.ops.quote_name
 
         # Create the test database and start the cubrid server.
+        check_command = ["cubrid", "checkdb", test_database_name]
         create_command = ["cubrid", "createdb" , "--db-volume-size=20M", "--log-volume-size=20M", test_database_name, "en_US.utf8"]
         start_command = ["cubrid", "server", "start", test_database_name]
         stop_command = ["cubrid", "server", "stop", test_database_name]
         delete_command = ["cubrid", "deletedb", test_database_name]
+
+        if keepdb:
+            # Check if the test database already exists, in case keepdb is True
+            try:
+                subprocess.run(check_command, check = True)
+                return # nothing to do if it already exists
+            except subprocess.CalledProcessError:
+                pass # go ahead and create it
 
         try:
             server_version = self.connection.get_server_version().split(".")
@@ -105,7 +114,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         except Exception as e:
             sys.stderr.write("Got an error creating the test database: %s\n" % e)
             if not autoclobber:
-                confirm = raw_input("Type 'yes' if you would like to try deleting the test database '%s', or 'no' to cancel: " % test_database_name)
+                confirm = input("Type 'yes' if you would like to try deleting the test database '%s', or 'no' to cancel: " % test_database_name)
             if autoclobber or confirm == 'yes':
                 try:
                     if verbosity >= 1:
