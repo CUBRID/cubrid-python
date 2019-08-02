@@ -46,18 +46,18 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         # Work out nullability
         null = field.null
         # If we were told to include a default value, do so
-        default_value = self.effective_default(field)
         include_default = include_default and not self.skip_default(field)
-        if include_default and default_value is not None:
-            if field.get_internal_type() == "BooleanField" and isinstance(default_value, bool):
-                default_value = 1 if default_value else 0
-            if self.connection.features.requires_literal_defaults:
-                # Some databases can't take defaults as a parameter (oracle)
-                # If this is the case, the individual schema backend should
-                # implement prepare_default
-                sql += " DEFAULT %s" % self.prepare_default(default_value)
-            else:
-                sql += " DEFAULT '%s'" % default_value
+        if include_default:
+            default_value = self.effective_default(field)
+            if default_value is not None:
+                if self.connection.features.requires_literal_defaults:
+                    # Some databases can't take defaults as a parameter (oracle)
+                    # If this is the case, the individual schema backend should
+                    # implement prepare_default
+                    sql += " DEFAULT %s" % self.prepare_default(default_value)
+                else:
+                    sql += " DEFAULT %s"
+                    params += [default_value]
         if not field.get_internal_type() in ("BinaryField",):
             # Oracle treats the empty string ('') as null, so coerce the null
             # option whenever '' is a possible value.
