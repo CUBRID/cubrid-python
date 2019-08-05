@@ -441,6 +441,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             'UUIDField': 'char(32)',
         }
         SchemaEditorClass = DatabaseSchemaEditor
+    if django.VERSION >= (1, 10):
+        _data_types.update({
+            'BigAutoField': 'bigint AUTO_INCREMENT',
+        })
 
     if django.VERSION >= (1, 11):
         client_class = DatabaseClient
