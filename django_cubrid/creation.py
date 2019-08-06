@@ -147,19 +147,6 @@ class DatabaseCreation(BaseDatabaseCreation):
         self.connection._commit()
         return count == 0
 
-    def destroy_test_db(self, old_database_name, verbosity=1):
-        """
-        Destroy a test database, prompting the user for confirmation if the
-        database already exists. Returns the name of the test database created.
-        """
-        if verbosity >= 1:
-            print("Destroying test database '%s'..." % self.connection.alias)
-        self.connection.close()
-        test_database_name = self.connection.settings_dict['NAME']
-        self.connection.settings_dict['NAME'] = old_database_name
-
-        self._destroy_test_db(test_database_name, verbosity)
-
     def _destroy_test_db(self, test_database_name, verbosity):
         "Internal implementation - remove the test db tables."
         # Remove the test database to clean up after
@@ -167,7 +154,6 @@ class DatabaseCreation(BaseDatabaseCreation):
         # to do so, because it's not allowed to delete a database while being
         # connected to it.
         cursor = self.connection.cursor()
-        self.set_autocommit()
         time.sleep(1) # To avoid "database is being accessed by other users" errors.
         p = subprocess.Popen(["cubrid", "server", "stop", test_database_name])
         ret = os.waitpid(p.pid, 0)[1]
