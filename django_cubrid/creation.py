@@ -91,7 +91,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         if keepdb:
             # Check if the test database already exists, in case keepdb is True
             try:
-                subprocess.run(check_command, check = True)
+                subprocess.check_call(check_command)
                 return # nothing to do if it already exists
             except subprocess.CalledProcessError:
                 pass # go ahead and create it
@@ -106,10 +106,11 @@ class DatabaseCreation(BaseDatabaseCreation):
             pass
 
         try:
-            subprocess.call(create_command)
+            subprocess.check_call(create_command)
             print('Created')
-            subprocess.call(start_command)
+            subprocess.check_call(start_command)
             print('Started')
+            subprocess.check_call(check_command)
 
         except Exception as e:
             sys.stderr.write("Got an error creating the test database: %s\n" % e)
@@ -119,12 +120,12 @@ class DatabaseCreation(BaseDatabaseCreation):
                 try:
                     if verbosity >= 1:
                         print("Destroying old test database...")
-                        subprocess.call(stop_command)
-                        subprocess.call(delete_command)
+                        subprocess.check_call(stop_command)
+                        subprocess.check_call(delete_command)
 
                         print("Creating test database...")
-                        subprocess.call(create_command)
-                        subprocess.call(start_command)
+                        subprocess.check_call(create_command)
+                        subprocess.check_call(start_command)
                 except Exception as e:
                     sys.stderr.write("Got an error recreating the test database: %s\n" % e)
                     sys.exit(2)
