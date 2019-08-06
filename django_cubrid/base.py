@@ -234,7 +234,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "DROP FOREIGN KEY"
 
     def force_no_ordering(self):
-        return ["NULL"]
+        return [(None, ("NULL", [], False))]
 
     def fulltext_search_sql(self, field_name):
         return 'MATCH (%s) AGAINST (%%s IN BOOLEAN MODE)' % field_name
