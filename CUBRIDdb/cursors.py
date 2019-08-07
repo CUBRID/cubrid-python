@@ -7,7 +7,7 @@ class BaseCursor(object):
     A base for Cursor classes. Useful attributes:
 
     description::
-        A tuple of DB API 7-tuples describing the columns in 
+        A tuple of DB API 7-tuples describing the columns in
         the last executed query; see PEP-249 for details.
 
     arraysize::
@@ -138,7 +138,10 @@ class BaseCursor(object):
 
     def _fetch_row(self):
         self.__check_state()
-        return self._cs.fetch_row(self._fetch_type)
+        row = self._cs.fetch_row(self._fetch_type)
+        if row is not None and self._fetch_type == 0:
+            return tuple(row)
+        return row
 
     def fetchone(self):
         """
