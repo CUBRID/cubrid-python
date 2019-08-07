@@ -111,6 +111,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # CUBRID 9.3 can't retrieve foreign key info from catalog tables.
     can_introspect_foreign_keys = False
 
+    can_introspect_small_integer_field = True
+
     can_return_id_from_insert = False
 
     can_rollback_ddl = True
