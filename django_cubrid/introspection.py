@@ -1,4 +1,7 @@
 import django
+import re
+
+from collections import namedtuple
 from CUBRIDdb import FIELD_TYPE
 
 if django.VERSION >= (1, 6) and django.VERSION <= (1, 8):
@@ -11,6 +14,9 @@ else:
     from django.db.backends.base.introspection import TableInfo
     from django.db.models.indexes import Index
     from django.utils.encoding import force_text
+
+
+InfoLine = namedtuple('InfoLine', 'col_name attr_type data_type prec scale is_nullable default_value def_order is_system_class class_type partitioned owner_name is_reuse_old_class')
 
 
 class DatabaseIntrospection(BaseDatabaseIntrospection):
@@ -52,10 +58,33 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         return name.lower()
 
     def get_table_description(self, cursor, table_name):
+        # Get accurate information with this query (taken from cubridmanager)
+        cursor.execute("""
+            SELECT a.attr_name, a.attr_type, a.data_type, a.prec, a.scale, a.is_nullable, a.default_value, a.def_order, c.is_system_class, c.class_type, c.partitioned, c.owner_name, c.is_reuse_oid_class
+            FROM db_attribute a, db_class c
+            WHERE c.class_name=a.class_name AND c.class_name = ?
+            ORDER BY a.class_name, a.def_order;""", [table_name])
+        field_info = {line[0]: InfoLine(*line) for line in cursor.fetchall()}
+
         """Returns a description of the table, with the DB-API cursor.description interface."""
         cursor.execute("SELECT * FROM %s LIMIT 1" % self.connection.ops.quote_name(table_name))
 
-        if django.VERSION >= (1, 6):
+        if django.VERSION >= (1, 7):
+            fields = []
+            for line in cursor.description:
+                info = field_info[line[0]]
+                fields.append(FieldInfo(
+                    force_text(line[0]),        # name
+                    line[1],                    # type
+                    line[2],                    # display_size
+                    info.prec,                  # internal size - use precision value
+                    info.prec,                  # precision
+                    info.scale,                 # scale
+                    info.is_nullable == "YES",  # null_ok
+                    info.default_value,         # default
+                ))
+            return fields
+        elif django.VERSION >= (1, 6):
             # In case of char type, django uses line[3](internal_size) as max_length
             return [FieldInfo(*((force_text(line[0]),) + line[1:3]
                     + (line[4],)  # use precision value as internal_size
@@ -72,6 +101,17 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         """
 
         raise NotImplementedError
+
+    def get_sequences(self, cursor, table_name, table_fields=()):
+        cursor.execute("SHOW CREATE TABLE %s" % table_name)
+        tname, stmt = cursor.fetchone()
+
+        # Only one auto increment possible
+        m = re.search(r'\[([\w]+)\][\w\s]*AUTO_INCREMENT', stmt)
+        if m is None:
+            return []
+
+        return [{'table': table_name, 'column': m.group(1)}]
 
     def get_key_columns(self, cursor, table_name):
         """
