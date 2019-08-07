@@ -191,20 +191,18 @@ class DatabaseOperations(BaseDatabaseOperations):
                 warnings.warn("CUBRID does not support timezone conversion",
                               RuntimeWarning)
 
-        params = []
         if lookup_type == 'week_day':
             # DAYOFWEEK() returns an integer, 1-7, Sunday=1.
             # Note: WEEKDAY() returns 0-6, Monday=0.
-            return "DAYOFWEEK(%s)" % field_name, params
+            return "DAYOFWEEK(%s)" % field_name
         else:
-            return "EXTRACT(%s FROM %s)" % (lookup_type.upper(), field_name), params
+            return "EXTRACT(%s FROM %s)" % (lookup_type.upper(), field_name)
 
     def datetime_trunc_sql(self, lookup_type, field_name, tzname):
         if settings.USE_TZ:
                 warnings.warn("CUBRID does not support timezone conversion",
                               RuntimeWarning)
 
-        params = []
         fields = ['year', 'month', 'day', 'hour', 'minute', 'second', 'milisecond']
         # Use double percents to escape.
         format = ('%%Y-', '%%m', '-%%d', ' %%H:', '%%i', ':%%s', '.%%ms')
@@ -216,7 +214,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         else:
             format_str = ''.join([f for f in format[:i]] + [f for f in format_def[i:]])
             sql = "CAST(DATE_FORMAT(%s, '%s') AS DATETIME)" % (field_name, format_str)
-        return sql, params
+        return sql
 
     def date_interval_sql(self, sql, connector, timedelta):
         if connector.strip() == '+':
