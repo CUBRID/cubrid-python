@@ -120,7 +120,7 @@ else:
 
 # set py_modules
 py_modules = ["CUBRIDdb.connections", "CUBRIDdb.cursors", "CUBRIDdb.FIELD_TYPE"]
-if sys.version_info.major >= 3:
+if sys.version >= '3':
     py_modules += [
         "django_cubrid.base", "django_cubrid.client", "django_cubrid.compiler",
         "django_cubrid.creation", "django_cubrid.introspection",
@@ -130,7 +130,7 @@ if sys.version_info.major >= 3:
 # Install CUBRID-Python driver.
 setup(
     name="CUBRID-Python",
-    version="10.0.0.0001",
+    version="10.2.0.0001",
     description="Python interface to CUBRID",
     long_description=\
             "Python interface to CUBRID conforming to the python DB API 2.0 "
