@@ -60,6 +60,7 @@ if os_type == 'Windows':
     inc_dir_base = os.path.join(script_dir, "cci-src\\src\\base")
     inc_dir_broker = os.path.join(script_dir, "cci-src\\src\\broker")
     inc_dir_cci = os.path.join(script_dir, "cci-src\\src\\cci")
+    inc_dir_compat = os.path.join(script_dir, "cci-src\\src\\compat")
 
     if arch_type == 'x86':
         lnk_dir = os.path.join(script_dir, "cci-src\\win\\cas_cci\\Win32\\Release")
@@ -75,6 +76,7 @@ else:
     inc_dir_base = os.path.join(script_dir, "cci-src/src/base")
     inc_dir_broker = os.path.join(script_dir, "cci-src/src/broker")
     inc_dir_cci = os.path.join(script_dir, "cci-src/src/cci")
+    inc_dir_compat = os.path.join(script_dir, "cci-src/src/cci")
 
     if arch_type == 'x86':
         lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
@@ -93,7 +95,7 @@ if os_type == 'Windows':
                 library_dirs=[lnk_dir, lnk_dir_ex],
                 libraries=["cas_cci", "libregex38a",
                            "ws2_32", "oleaut32", "advapi32"],
-                include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker],
+                include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker, inc_dir_compat],
                 sources=['python_cubrid.c'],
             )
         ]
@@ -107,7 +109,7 @@ else:
         ext_modules = [
             Extension(
                 name="_cubrid",
-                include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker],
+                include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker, inc_dir_compat],
                 sources=['python_cubrid.c'],
                 libraries=["pthread", "stdc++"],
                 extra_objects=[cci_static_lib]
