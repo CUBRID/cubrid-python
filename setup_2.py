@@ -76,7 +76,7 @@ else:
     inc_dir_base = os.path.join(script_dir, "cci-src/src/base")
     inc_dir_broker = os.path.join(script_dir, "cci-src/src/broker")
     inc_dir_cci = os.path.join(script_dir, "cci-src/src/cci")
-    inc_dir_compat = os.path.join(script_dir, "cci-src/src/cci")
+    inc_dir_compat = os.path.join(script_dir, "cci-src/src/compat")
 
     if arch_type == 'x86':
         lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
