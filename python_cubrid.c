@@ -4108,7 +4108,7 @@ PyTypeObject _cubrid_CursorObject_type = {
   0,				/* tp_free */
 };
 
-#define _CUBRID_VERSION_	"10.0.0.0001"
+#define _CUBRID_VERSION_	"10.2.0.0001"
 static char _cubrid_doc[] = "CUBRID API Module for Python";
 
 #if PY_MAJOR_VERSION >= 3
