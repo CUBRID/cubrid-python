@@ -1,6 +1,9 @@
 import os
 import sys
 
+from distutils import msvc9compiler
+msvc9compiler.VERSION = 14.0 #Visual studio 2010
+
 if sys.version > '3':
     setup_file = "setup_3.py"
 else:
