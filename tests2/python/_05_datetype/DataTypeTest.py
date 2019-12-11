@@ -240,7 +240,7 @@ class FetchoneTypeTest(unittest.TestCase):
         def test_timestamp(self):
 #               test normal datetime type
                 dataList = ['10/31','10/31/2008','13:15:45 10/31/2008']
-		dataCheck = ['2013-10-31 00:00:00','2008-10-31 00:00:00','2008-10-31 13:15:45']
+		dataCheck = ['2019-10-31 00:00:00','2008-10-31 00:00:00','2008-10-31 13:15:45']
                 sqlInsert = "insert into datetime_db(c_timestamp) values "
                 for i in dataList:
                         sqlInsert = sqlInsert + "('" + i + "'),"

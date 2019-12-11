@@ -148,10 +148,11 @@ class CubridDataTimeTest(unittest.TestCase):
         def test_cubrid_timefromticks(self):
 #               test cubrid timeformticks
                 dataTuple=(0.00,57599.00,57600.00,)
-                dataCheck=[datetime.time(8,0,0),datetime.time(23,59,59),datetime.time(0,0,0)]
+                dataCheck=[datetime.time(9,0,0),datetime.time(0,59,59),datetime.time(1,0,0)]
+                print '-----------------------------------------------------------------------------'
                 for i in range(len(dataTuple)):
                         data = CUBRIDdb.TimeFromTicks(dataTuple[i])
-                        print "cubrid time: ",data
+                        print "cubrid time: ",i, data
                         self.assertEquals(dataCheck[i], data)
 
         def test_cubrid_timefromticks_invalid(self):
@@ -167,8 +168,8 @@ class CubridDataTimeTest(unittest.TestCase):
 
         def test_cubrid_timestampfromticks(self):
 #               test cubrid timeformticks
-                dataTuple=(-1,0.00,57599.00,57600.00,)
-                dataCheck=[datetime.datetime(1970,1,1,7,59,59),datetime.datetime(1970,1,1,8,0,0),datetime.datetime(1970,1,1,23,59,59),datetime.datetime(1970,1,2,0,0,0)]
+                dataTuple=(-1.00,0.00,140399.00,54000.00,)
+                dataCheck=[datetime.datetime(1970,1,1,8,59,59),datetime.datetime(1970,1,1,9,0,0),datetime.datetime(1970,1,2,23,59,59),datetime.datetime(1970,1,2,0,0,0)]
                 for i in range(len(dataTuple)):
                         data = CUBRIDdb.TimestampFromTicks(dataTuple[i])
                         print "cubrid time: ",data
