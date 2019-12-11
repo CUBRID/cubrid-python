@@ -23,7 +23,7 @@ class ExecuteNonormalTest(unittest.TestCase):
 		self.cursor= self.conn.cursor()
                 nsql='drop table if exists partition_tb'
                 self.cursor.execute(nsql)
-                nsql2="create table partition_tb(id int not null primary key ,test_char char(50),test_varchar varchar(2000), test_bit bit(16),test_varbit bit varying(20),test_nchar nchar(50),test_nvarchar nchar varying(2000),test_string string,test_datetime timestamp)"
+                nsql2="create table partition_tb(id int not null, test_char char(50),test_varchar varchar(2000), test_bit bit(16),test_varbit bit varying(20),test_nchar nchar(50),test_nvarchar nchar varying(2000),test_string string,test_datetime timestamp, primary key (id, test_char))"
                 self.cursor.execute(nsql2)
 
         def tearDown(self):
@@ -75,7 +75,7 @@ class ExecuteNonormalTest(unittest.TestCase):
                 insertSql2="insert into partition_tb values(5,'ggg','ggg',B'101',B'1111',N'ggg',N'ggg','gggggggggg','2006-03-01 09:00:00')"
                 resultInsert2=self.cursor.execute(insertSql2)
                 self.assertEquals(resultInsert2,1)
-                insertSql3="insert into partition_tb values(10, null,null,null,null,null,null,null,'2007-01-01 09:00:00');"
+                insertSql3="insert into partition_tb values(10, 'kkk',null,null,null,null,null,null,'2007-01-01 09:00:00');"
                 resultInsert3=self.cursor.execute(insertSql3)
                 self.assertEquals(resultInsert3,1)                
 
@@ -98,7 +98,7 @@ class ExecuteNonormalTest(unittest.TestCase):
                 insertSql2="insert into partition_tb values(5,'ggg','ggg',B'101',B'1111',N'ggg',N'ggg','gggggggggg','2006-03-01 09:00:00')"
                 resultInsert2=self.cursor.execute(insertSql2)
                 self.assertEquals(resultInsert2,1)
-                insertSql3="insert into partition_tb values(10, null,null,null,null,null,null,null,'2007-01-01 09:00:00');"
+                insertSql3="insert into partition_tb values(10, 'kkk',null,null,null,null,null,null,'2007-01-01 09:00:00');"
                 resultInsert3=self.cursor.execute(insertSql3)
                 self.assertEquals(resultInsert3,1)
 
