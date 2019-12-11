@@ -62,7 +62,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from numeric_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description		
-		dataCheck = (('c_int', 8, 0, 0, 10, 0, 0), ('c_short', 9, 0, 0, 5, 0, 0), ('c_numeric', 7, 0, 0, 15, 0, 0), ('c_float', 11, 0, 0, 7, 0, 0), ('c_double', 12, 0, 0, 15, 0, 0), ('c_monetary', 10, 0, 0, 15, 0, 0))
+		dataCheck = (('c_int', 8, 0, 0, 10, 0, 1), ('c_short', 9, 0, 0, 5, 0, 1), ('c_numeric', 7, 0, 0, 15, 0, 1), ('c_float', 11, 0, 0, 7, 0, 1), ('c_double', 12, 0, 0, 15, 0, 1), ('c_monetary', 10, 0, 0, 15, 0, 1))
 		self.assertEquals(dataCheck, dataDesc)
 
         def test_desc_datetime(self):
@@ -70,7 +70,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from datetime_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description
-                dataCheck = (('c_date', 13, 0, 0, 10, 0, 0), ('c_time', 14, 0, 0, 8, 0, 0), ('c_datetime', 22, 0, 0, 23, 3, 0), ('c_timestamp', 15, 0, 0, 19, 0, 0))
+                dataCheck = (('c_date', 13, 0, 0, 10, 0, 1), ('c_time', 14, 0, 0, 8, 0, 1), ('c_datetime', 22, 0, 0, 23, 3, 1), ('c_timestamp', 15, 0, 0, 19, 0, 1))
 		self.assertEquals(dataCheck, dataDesc)
 
         def test_desc_bit(self):
@@ -78,7 +78,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from bit_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description
-                dataCheck = (('c_bit', 5, 0, 0, 8, 0, 0), ('c_varbit', 6, 0, 0, 8, 0, 0))
+                dataCheck = (('c_bit', 5, 0, 0, 8, 0, 1), ('c_varbit', 6, 0, 0, 8, 0, 1))
                 self.assertEquals(dataCheck, dataDesc)
 
         def test_desc_char(self):
@@ -86,7 +86,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from character_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description
-                dataCheck = (('c_char', 1, 0, 0, 4, 0, 0), ('c_varchar', 2, 0, 0, 4, 0, 0), ('c_string', 2, 0, 0, 1073741823, 0, 0), ('c_nchar', 3, 0, 0, 4, 0, 0), ('c_varnchar', 4, 0, 0, 4, 0, 0))
+                dataCheck = (('c_char', 1, 0, 0, 4, 0, 1), ('c_varchar', 2, 0, 0, 4, 0, 1), ('c_string', 2, 0, 0, 1073741823, 0, 1), ('c_nchar', 3, 0, 0, 4, 0, 1), ('c_varnchar', 4, 0, 0, 4, 0, 1))
                 self.assertEquals(dataCheck, dataDesc)
 
         def test_desc_collection(self):
@@ -94,7 +94,7 @@ class FetchoneDescriptionTest(unittest.TestCase):
                 sqlSelect = "select * from collection_db"
                 self.cur.execute(sqlSelect)
                 dataDesc = self.cur.description
-                dataCheck = (('c_set', 32, 0, 0, 0, 0, 0), ('c_multiset', 64, 0, 0, 0, 0, 0), ('c_sequence', 96, 0, 0, 0, 0, 0))
+                dataCheck = (('c_set', 32, 0, 0, 0, 0, 1), ('c_multiset', 64, 0, 0, 0, 0, 1), ('c_sequence', 96, 0, 0, 0, 0, 1))
                 self.assertEquals(dataCheck, dataDesc)
 
 	def test_all(self):
