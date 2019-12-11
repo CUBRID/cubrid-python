@@ -28,3 +28,11 @@ function check_verdict ()
 	echo $verdict
 }
 
+function python_version_check ()
+{
+	local version=$($1 --version 2>&1)
+	local major=$(echo $version | cut -d ' ' -f2-2)
+	major=${major:0:1}
+
+	echo $major
+}

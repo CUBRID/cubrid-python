@@ -11,14 +11,22 @@ MEM_LOG=memoryLeaklog
 FUNC_LOG=function_result
 VALGRIND="valgrind --leak-check=full"
 
-echo "Python DBI Test Begin..."
-
 rm -rf memoryLeaklog
 mkdir  memoryLeaklog
 rm -rf function_result
 mkdir  function_result
 
 PYTHON=$(find_python $*)
+
+python_version_major=$(python_version_check $PYTHON)
+
+if [ x"$python_version_major" != "x2" ];then
+	echo -n "We do not support this version: "
+	$PYTHON --version
+	exit
+fi
+
+echo "Python DBI Test Begin... ($PYTHON)"
 
 cubrid server stop $db
 cubrid createdb $db $CUBRID_LANG
@@ -55,5 +63,6 @@ done
 cubrid server stop $db
 cubrid deletedb $db
 rm -f $testcases
+rm -rf lob
 
 echo "Python DBI Test End"
