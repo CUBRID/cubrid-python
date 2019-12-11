@@ -1,51 +1,68 @@
 #!/bin/bash
+. ./init.sh
+
+db=pydb
+CUBRID_LANG=ko_KR.utf8
+PYTHON_CON=configuration/python_config.xml
+#TC_DIR="python performance"
+TC_DIR="python"
+testcases=python_testcase_list
+MEM_LOG=memoryLeaklog
+FUNC_LOG=function_result
+VALGRIND="valgrind --leak-check=full"
+
 rm -rf memoryLeaklog
 mkdir  memoryLeaklog
 rm -rf function_result
 mkdir  function_result
 
-db=pydb
-cubrid createdb -r $db
-cubrid server start $db
-cubrid broker start
-echo "Python DBI Test Begin..."
+PYTHON=$(find_python $*)
 
-brokerPort=`cubrid broker status -b|grep broker1|awk '{print $4}'`
-#a=`cat /etc/sysconfig/network-scripts/ifcfg-eth1|grep IPADDR|awk '{print $1}'`
-a=`/sbin/ifconfig | grep inet | grep -v 127 | awk '{print $2}' | sed 's/addr://g'|sed -n '1p'`
-ipaddress="${a#*=}"
+python_version_major=$(python_version_check $PYTHON)
 
-cd ./configuration
-echo "<PythonConfig>" >python_config.xml
-echo "  <ip>localhost</ip>" >> python_config.xml
-echo "  <port>$brokerPort</port>"   >>python_config.xml
-echo "  <dbname>$db</dbname>"  >>python_config.xml
-echo "  <remoteIP>$ipaddress</remoteIP>"  >>python_config.xml
-echo "</PythonConfig>" >>python_config.xml
-cd ..
+if [ x"$python_version_major" != "x2" ];then
+	echo -n "We do not support this version: "
+	$PYTHON --version
+	exit
+fi
 
-ls |grep -E "^_" |grep  -v "runTest.sh" | grep -v "CUBRID_Python.list_file" > ./memoryLeaklog/CUBRID_Python.list_file
-while read LIST_FILE
-do
-   cd $LIST_FILE
-   ls |grep -E ".py$" > ./../memoryLeaklog/$LIST_FILE.list
-   
-   while read TEST_FILE
-   do 
-      valgrind --leak-check=full --log-file=./../memoryLeaklog/$TEST_FILE.memoryleak python $TEST_FILE >>./../function_result/$TEST_FILE.result 2>&1
-   done < ./../memoryLeaklog/$LIST_FILE.list
-   
-   cd ..
-
-done < ./memoryLeaklog/CUBRID_Python.list_file
+echo "Python DBI Test Begin... ($PYTHON)"
 
 cubrid server stop $db
-cubrid broker stop
+cubrid createdb $db $CUBRID_LANG
+cubrid server restart $db
+cubrid server restart demodb
+cubrid broker restart
+brokerPort=`cubrid broker status -b|grep broker1|awk '{print $4}'`
+ipaddress=$(hostname -i)
+
+
+echo "<PythonConfig>"			>  $PYTHON_CON
+echo "  <ip>localhost</ip>"		>> $PYTHON_CON
+echo "  <port>$brokerPort</port>"	>> $PYTHON_CON
+echo "  <dbname>$db</dbname>"		>> $PYTHON_CON
+echo "  <remoteIP>$ipaddress</remoteIP>">> $PYTHON_CON
+echo "</PythonConfig>"			>> $PYTHON_CON
+
+# Generate test cases from directories
+rm -f $testcases
+for dir in $TC_DIR
+do
+	find $dir -name '*.py' -print >> $testcases
+done
+
+for tc in $(cat $testcases)
+do
+	tcb=$(basename $tc)
+	echo -n "Running TestCase ($tcb) $tc "
+	$VALGRIND --log-file=$MEM_LOG/$tcb.memLeak $PYTHON $tc >> $FUNC_LOG/$tcb.result 2>&1
+	verdict=$(check_verdict $FUNC_LOG/$tcb.result)
+	echo $verdict
+done
+
+cubrid server stop $db
 cubrid deletedb $db
-
+rm -f $testcases
 rm -rf lob
-rm ./memoryLeaklog/*.list
-rm ./memoryLeaklog/CUBRID_Python.list_file
+
 echo "Python DBI Test End"
-
-

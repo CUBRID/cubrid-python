@@ -166,8 +166,8 @@ class DatabaseTest(unittest.TestCase):
     def test_isolation_level(self):
         con = self._connect()
         try:
-            con.set_isolation_level(CUBRID_REP_CLASS_UNCOMMIT_INSTANCE)
-            self.assertEqual(con.isolation_level, 'CUBRID_REP_CLASS_UNCOMMIT_INSTANCE',
+            con.set_isolation_level(CUBRID_REP_CLASS_COMMIT_INSTANCE)
+            self.assertEqual(con.isolation_level, 'CUBRID_REP_CLASS_COMMIT_INSTANCE',
                     'connection.set_isolation_level does not work')
         finally:
             con.close()
@@ -175,14 +175,14 @@ class DatabaseTest(unittest.TestCase):
     def test_autocommit(self):
         con = self._connect()
         try:
-            self.assertEqual(con.autocommit, 'TRUE',
+            self.assertEqual(con.autocommit, True,
                     'connection.autocommit default is TRUE')
-            con.set_autocommit('ON')
-            self.assertEqual(con.autocommit, 'TRUE',
+            con.set_autocommit(True)
+            self.assertEqual(con.autocommit, True,
                     'connection.autocommit should TURE after set on')
-            con.set_autocommit('OFF')
-            self.assertEqual(con.autocommit, 'FALSE',
-                    'connection.autocommit should TURE after set on')
+            con.set_autocommit(False)
+            self.assertEqual(con.autocommit, False,
+                    'connection.autocommit should FALSE after set on')
         finally:
             con.close()
 
