@@ -24,6 +24,7 @@ Abstract
 Project URL
 -----------
   * Project Home: https://github.com/CUBRID/cubrid-python
+  * Latest CUBRID Python Driver: http://ftp.cubrid.org/CUBRID_Drivers/Python_Driver/
 
 Dependencies for CUBRIDdb
 -------------------------
