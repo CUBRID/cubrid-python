@@ -22,11 +22,11 @@ Abstract
 
 
 Project URL
-===========
+-----------
   * Project Home: https://github.com/CUBRID/cubrid-python
 
 Dependencies for CUBRIDdb
-=========================
+-------------------------
   * CUBRID: 8.4.0 or higher
   * OS    : Windows (x86 and x86_64)
             Linux (32bit and 64bit)
@@ -35,7 +35,7 @@ Dependencies for CUBRIDdb
             Python 3.0+
 
 Install for CUBRIDdb
-====================
+--------------------
   * Unix/Linux/Windows
   * GNU Compiler Collection: Developer Toolset 6 or higer to build from source (Linux)
 
@@ -46,18 +46,17 @@ Install for CUBRIDdb
   $ python setup.py install
 ```
 Documents
-=========
+---------
   * See Python DB API 2.0 Spec (http://www.python.org/dev/peps/pep-0249/)
  
 Samples
-=======
+-------
   * See directory "samples".
 
 
         Notes about Django_cubrid backend
 
-Abstract
-========
-  Django_cubrid is the Django backend for CUBRID Database.
-
-  Please refer to README_django_cubrid for more information.
+Notes
+-----
+ * Django_cubrid is the Django backend for CUBRID Database.
+ * Please refer to README_django_cubrid for more information.
