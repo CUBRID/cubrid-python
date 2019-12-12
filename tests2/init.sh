@@ -1,17 +1,5 @@
 # supplmentatry functions for python test
 
-
-function find_python ()
-{
-        arg=$(echo $* | cut -d'=' -f1-1)
-        if [ x$arg = "xpython" ];then
-                arg=$(echo $* | cut -d'=' -f2-2)
-                echo $arg
-        else
-                echo "python"   # Use default
-        fi
-}
-
 function check_verdict ()
 {
 	if [ ! -f $1 ];then
@@ -35,4 +23,25 @@ function python_version_check ()
 	major=${major:0:1}
 
 	echo $major
+}
+
+function show_usage ()
+{
+        echo "Usage: $0 [OPTIONS]"
+        echo " OPTIONS"
+        echo " -p arg   Set python binary to use"
+        echo " -m       Run with MemoryLeak Test (valgrind is required)"
+        echo " -a       Run all TestCases including performance test"
+}
+
+function get_options ()
+{
+  while getopts "amp:" opt; do
+    case $opt in
+      m ) test_mode="with_MemoryLeak" ;;
+      p ) python="$OPTARG" ;;
+      a ) test_case="all TestCases (functional, performance)" ;;
+      h|\?|* ) show_usage; exit 1;;
+    esac
+  done
 }
