@@ -37,6 +37,7 @@ Dependencies for CUBRIDdb
 Install for CUBRIDdb
 ====================
   * Unix/Linux/Windows
+  * GNU Compiler Collection: Developer Toolset 6 or higer to build from source (Linux)
 
   To build and install from source, you should move into the top-level directory 
   of the CUBRIDdb distribution and issue the following commands.
