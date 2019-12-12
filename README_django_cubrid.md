@@ -41,7 +41,7 @@ When building the CUBRID Python driver, if the Python version meets the prerequi
 the django_cubrid will be installed into Python library.
 
 4. Configure
------------
+------------
 
 Configure the DATABASES part in your setting.py like below:
 ```
