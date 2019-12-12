@@ -45,7 +45,6 @@ the django_cubrid will be installed into Python library.
 
 Configure the DATABASES part in your setting.py like below:
 ```
-
     DATABASES = {
         'default': {
             'ENGINE': 'django_cubrid',       # The backend name: django_cubrid
