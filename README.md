@@ -3,13 +3,13 @@
 
 Overview
 ========
-
+```
 CUBRIDdb driver: CUBRID Module for Python DB API 2.0
                  Python driver for CUBRID Database
 Django_cubrid backend: Django backend for CUBRID Database
 Author: Li Jinhu (beagem@nhn.com), Li Lin(aniterle@nhn.com), Zhang Hui
 Date: December, 2012
-
+```
 
         Notes about CUBRIDdb driver
 
@@ -41,10 +41,10 @@ Install for CUBRIDdb
 
   To build and install from source, you should move into the top-level directory 
   of the CUBRIDdb distribution and issue the following commands.
-  
-    > python setup.py build
-    > python setup.py install
-
+ ``` 
+  $ python setup.py build
+  $ python setup.py install
+```
 Documents
 =========
   * See Python DB API 2.0 Spec (http://www.python.org/dev/peps/pep-0249/)
