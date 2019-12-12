@@ -27,23 +27,27 @@ Project URL
 
 Dependencies for CUBRIDdb
 -------------------------
+```
   * CUBRID: 8.4.0 or higher
   * OS    : Windows (x86 and x86_64)
             Linux (32bit and 64bit)
             Other Unix and Unix-like os
   * Python: Python 2.4+
             Python 3.0+
+  * Compiler: to build from Source
+            Visual Studio 2015 (Windows)
+            GNU Developer Toolset 6 or higher
+```
 
 Install for CUBRIDdb
 --------------------
-  * Unix/Linux/Windows
-  * GNU Compiler Collection: Developer Toolset 6 or higer to build from source (Linux)
-
   To build and install from source, you should move into the top-level directory 
   of the CUBRIDdb distribution and issue the following commands.
  ``` 
+  $ git clone --recursive git@github.com:CUBRID/cubrid-python.git
+  $ cd cubrid-python
   $ python setup.py build
-  $ python setup.py install
+  $ sudo python setup.py install   (Windows: python setup.py install)
 ```
 Documents
 ---------
