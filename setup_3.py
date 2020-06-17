@@ -132,7 +132,7 @@ if sys.version >= '3':
 # Install CUBRID-Python driver.
 setup(
     name="CUBRID-Python",
-    version="10.2.0.0001",
+    version="10.2.0.0002",
     description="Python interface to CUBRID",
     long_description=\
             "Python interface to CUBRID conforming to the python DB API 2.0 "
