@@ -64,10 +64,10 @@ if os_type == 'Windows':
 
     if arch_type == 'x86':
         lnk_dir = os.path.join(script_dir, "cci-src\\win\\cas_cci\\Win32\\Release")
-        lnk_dir_ex = os.path.join(script_dir, "cci-src\\win\\external\\lib")
+        lnk_dir_ex = os.path.join(script_dir, "cci-src\\win\\external\\openssl\\lib_v140")
     else:
         lnk_dir = os.path.join(script_dir, "cci-src\\win\\cas_cci\\x64\\Release")
-        lnk_dir_ex = os.path.join(script_dir, "cci-src\\win\\external\\lib64")
+        lnk_dir_ex = os.path.join(script_dir, "cci-src\\win\\external\\openssl\\lib64_v140")
 
 #elif os_type == 'Linux':
 else:
@@ -80,8 +80,10 @@ else:
 
     if arch_type == 'x86':
         lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
+        lnk_dir_ex = os.path.join(script_dir, "cci-src/external/openssl/lib")
     else:
         lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
+        lnk_dir_ex = os.path.join(script_dir, "cci-src/external/openssl/lib")
 
 
 # set ext_modules
@@ -93,8 +95,10 @@ if os_type == 'Windows':
                 name="_cubrid",
                 extra_link_args=["/NODEFAULTLIB:libcmt"],
                 library_dirs=[lnk_dir, lnk_dir_ex],
-                libraries=["cas_cci", "libregex38a",
-                           "ws2_32", "oleaut32", "advapi32"],
+                libraries=["cas_cci",
+                           "ws2_32", "oleaut32", "advapi32",
+                           "libssl", "libcrypto",
+                           "gdi32", "user32"],
                 include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker, inc_dir_compat],
                 sources=['python_cubrid.c'],
             )
@@ -111,7 +115,8 @@ else:
                 name="_cubrid",
                 include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker, inc_dir_compat],
                 sources=['python_cubrid.c'],
-                libraries=["pthread", "stdc++"],
+                library_dirs=[lnk_dir, lnk_dir_ex],
+                libraries=["pthread", "stdc++", "ssl", "crypto"],
                 extra_objects=[cci_static_lib]
             )
         ]
@@ -132,7 +137,7 @@ if sys.version >= '3':
 # Install CUBRID-Python driver.
 setup(
     name="CUBRID-Python",
-    version="10.2.0.0002",
+    version="11.0.0.0001",
     description="Python interface to CUBRID",
     long_description=\
             "Python interface to CUBRID conforming to the python DB API 2.0 "
