@@ -80,8 +80,10 @@ else:
 
     if arch_type == 'x86':
         lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
+        lnk_dir_ex = os.path.join(script_dir, "cci-src/external/openssl/lib")
     else:
         lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
+        lnk_dir_ex = os.path.join(script_dir, "cci-src/external/openssl/lib")
 
 
 # set ext_modules
@@ -113,7 +115,8 @@ else:
                 name="_cubrid",
                 include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker, inc_dir_compat],
                 sources=['python_cubrid.c'],
-                libraries=["pthread", "stdc++"],
+                library_dirs=[lnk_dir, lnk_dir_ex],
+                libraries=["pthread", "stdc++", "ssl", "crypto"],
                 extra_objects=[cci_static_lib]
             )
         ]
