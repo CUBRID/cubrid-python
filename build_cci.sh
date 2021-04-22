@@ -8,6 +8,7 @@ fi
 
 cd cci-src
 chmod +x configure
+touch configure.ac
 if [ "$1" = 'x86' ];then
   ./configure 
 else
