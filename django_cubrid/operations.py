@@ -1,3 +1,14 @@
+
+import django
+import uuid
+import sys
+import warnings
+
+from django.conf import settings
+from django.db.backends.base.operations import BaseDatabaseOperations
+from django.utils import timezone
+from django.utils.encoding import force_text
+
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "django_cubrid.compiler"
 
@@ -35,20 +46,18 @@ class DatabaseOperations(BaseDatabaseOperations):
                 warnings.warn("CUBRID does not support timezone conversion",
                               RuntimeWarning)
 
-        params = []
         if lookup_type == 'week_day':
             # DAYOFWEEK() returns an integer, 1-7, Sunday=1.
             # Note: WEEKDAY() returns 0-6, Monday=0.
-            return "DAYOFWEEK(%s)" % field_name, params
+            return "DAYOFWEEK(%s)" % field_name
         else:
-            return "EXTRACT(%s FROM %s)" % (lookup_type.upper(), field_name), params
+            return "EXTRACT(%s FROM %s)" % (lookup_type.upper(), field_name)
 
     def datetime_trunc_sql(self, lookup_type, field_name, tzname):
         if settings.USE_TZ:
                 warnings.warn("CUBRID does not support timezone conversion",
                               RuntimeWarning)
 
-        params = []
         fields = ['year', 'month', 'day', 'hour', 'minute', 'second', 'milisecond']
         # Use double percents to escape.
         format = ('%%Y-', '%%m', '-%%d', ' %%H:', '%%i', ':%%s', '.%%ms')
@@ -60,7 +69,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         else:
             format_str = ''.join([f for f in format[:i]] + [f for f in format_def[i:]])
             sql = "CAST(DATE_FORMAT(%s, '%s') AS DATETIME)" % (field_name, format_str)
-        return sql, params
+        return sql
 
     def date_interval_sql(self, sql, connector, timedelta):
         if connector.strip() == '+':
@@ -78,7 +87,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "DROP FOREIGN KEY"
 
     def force_no_ordering(self):
-        return ["NULL"]
+        return [(None, ("NULL", [], False))]
 
     def fulltext_search_sql(self, field_name):
         return 'MATCH (%s) AGAINST (%%s IN BOOLEAN MODE)' % field_name
@@ -132,6 +141,11 @@ class DatabaseOperations(BaseDatabaseOperations):
         else:
             return []
 
+    def prep_for_like_query(self, x):
+        return str(x).replace("\\", "\\\\").replace("%", "\%")
+
+    prep_for_iexact_query = prep_for_like_query
+
     def value_to_db_datetime(self, value):
         if value is None:
             return None
@@ -173,24 +187,60 @@ class DatabaseOperations(BaseDatabaseOperations):
     def max_name_length(self):
         return 64
 
-    if django.VERSION < (1, 9):
-        def bulk_insert_sql(self, fields, num_values):
-            items_sql = "(%s)" % ", ".join(["%s"] * len(fields))
-            return "VALUES " + ", ".join([items_sql] * num_values)
-    else:
-        def bulk_insert_sql(self, fields, placeholder_rows):
-            placeholder_rows_sql = (", ".join(row) for row in placeholder_rows)
-            values_sql = ", ".join("({0})".format(sql) for sql in placeholder_rows_sql)
-            return "VALUES " + values_sql
+    def bulk_insert_sql(self, fields, placeholder_rows):
+        placeholder_rows_sql = (", ".join(row) for row in placeholder_rows)
+        values_sql = ", ".join("({0})".format(sql) for sql in placeholder_rows_sql)
+        return "VALUES " + values_sql
 
     def get_db_converters(self, expression):
         converters = super().get_db_converters(expression)
         internal_type = expression.output_field.get_internal_type()
-        if internal_type in ["BooleanField", "NullBooleanField"]:
+        if internal_type == 'BinaryField':
+            converters.append(self.convert_binaryfield_value)
+        elif internal_type == 'TextField':
+            converters.append(self.convert_textfield_value)
+        elif internal_type in ['BooleanField', 'NullBooleanField']:
             converters.append(self.convert_booleanfield_value)
+        elif internal_type == 'DateTimeField':
+            if settings.USE_TZ:
+                converters.append(self.convert_datetimefield_value)
+        elif internal_type == 'UUIDField':
+            converters.append(self.convert_uuidfield_value)
+        elif internal_type in ['IPAddressField', 'GenericIPAddressField']:
+            converters.append(self.convert_ipaddress_value)
         return converters
+
+    def convert_binaryfield_value(self, value, expression, connection):
+        if not value.startswith('0B'):
+            raise ValueError('Unexpected value: %s' % value)
+        value = value[2:]
+        def gen_bytes():
+            for i in range(0, len(value), 8):
+                yield int(value[i:i + 8], 2)
+        value = bytes(gen_bytes())
+        return value
+
+    def convert_textfield_value(self, value, expression, connection):
+        if value is not None:
+            value = force_text(value)
+        return value
 
     def convert_booleanfield_value(self, value, expression, connection):
         if value in (0, 1):
             value = bool(value)
+        return value
+
+    def convert_datetimefield_value(self, value, expression, connection):
+        if value is not None:
+            value = timezone.make_aware(value, self.connection.timezone)
+        return value
+
+    def convert_uuidfield_value(self, value, expression, connection):
+        if value is not None:
+            value = uuid.UUID(value)
+        return value
+
+    def convert_ipaddress_value(self, value, expression, connection):
+        if value is not None:
+            value = value.strip()
         return value
