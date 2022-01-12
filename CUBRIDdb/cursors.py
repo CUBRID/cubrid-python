@@ -1,5 +1,14 @@
 import sys
 from CUBRIDdb import FIELD_TYPE
+from CUBRIDdb import InterfaceError
+from functools import reduce
+
+
+def bytes_to_binstr(b):
+    return reduce(
+        lambda x1, x2: x1 + x2[2:],
+        map(lambda x: format(x, '#010b'), b)
+    )
 
 
 class BaseCursor(object):
@@ -33,7 +42,7 @@ class BaseCursor(object):
 
     def __check_state(self):
         if self._cs is None:
-            raise Exception("The cursor has been closed. No operation is allowed any more.")
+            raise InterfaceError("The cursor has been closed. No operation is allowed any more.")
 
     def close(self):
         """Close the cursor, and no further queries will be possible."""
@@ -56,7 +65,9 @@ class BaseCursor(object):
                 else:
                     args[i] = '0'
             elif isinstance(args[i], tuple):
-                 args[i] = args[i]
+                args[i] = args[i]
+            elif isinstance(args[i], bytes):
+                args[i] = bytes_to_binstr(args[i])
             else:
                 # Python3.X dosen't support unicode keyword.
                 try:
@@ -73,6 +84,11 @@ class BaseCursor(object):
                         args[i] = args[i].encode(self.charset)
                     else:
                         args[i] = str(args[i])
+
+            if isinstance(args[i], bytes):
+                self._cs.bind_param(i+1, args[i], FIELD_TYPE.VARBIT)
+            elif not isinstance(args[i], tuple):
+                self._cs.bind_param(i+1, args[i])
 
             if type(args[i]) != tuple:
                 self._cs.bind_param(i+1, args[i])
