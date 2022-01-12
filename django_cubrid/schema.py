@@ -1,10 +1,9 @@
 # New file added for Django 1.7
 import django
+import datetime
+
 from django.db.models.fields.related import ManyToManyField
-if django.VERSION >= (1, 8):
-    from django.db.backends.base.schema import BaseDatabaseSchemaEditor
-else:
-    from django.db.backends.schema import BaseDatabaseSchemaEditor
+from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
@@ -29,7 +28,19 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     sql_delete_pk = "ALTER TABLE %(table)s DROP PRIMARY KEY"
 
     def quote_value(self, value):
-        return self.connection.escape_string(value)
+        if isinstance(value, (datetime.date, datetime.time, datetime.datetime)):
+            return "'%s'" % value
+        elif isinstance(value, str):
+            return "'%s'" % self.connection.connection.escape_string(value)
+        elif isinstance(value, (bytes, bytearray, memoryview)):
+            return "'%s'" % value.hex()
+        elif isinstance(value, bool):
+            return "1" if value else "0"
+        else:
+            return str(value)
+
+    def prepare_default(self, value):
+        return self.quote_value(value)
 
     def column_sql(self, model, field, include_default=False):
         """
@@ -46,18 +57,18 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         # Work out nullability
         null = field.null
         # If we were told to include a default value, do so
-        default_value = self.effective_default(field)
         include_default = include_default and not self.skip_default(field)
-        if include_default and default_value is not None:
-            if field.get_internal_type() == "BooleanField" and isinstance(default_value, bool):
-                default_value = 1 if default_value else 0
-            if self.connection.features.requires_literal_defaults:
-                # Some databases can't take defaults as a parameter (oracle)
-                # If this is the case, the individual schema backend should
-                # implement prepare_default
-                sql += " DEFAULT %s" % self.prepare_default(default_value)
-            else:
-                sql += " DEFAULT '%s'" % default_value
+        if include_default:
+            default_value = self.effective_default(field)
+            if default_value is not None:
+                if self.connection.features.requires_literal_defaults:
+                    # Some databases can't take defaults as a parameter (oracle)
+                    # If this is the case, the individual schema backend should
+                    # implement prepare_default
+                    sql += " DEFAULT %s" % self.prepare_default(default_value)
+                else:
+                    sql += " DEFAULT %s"
+                    params += [default_value]
         if not field.get_internal_type() in ("BinaryField",):
             # Oracle treats the empty string ('') as null, so coerce the null
             # option whenever '' is a possible value.
