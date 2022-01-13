@@ -33,8 +33,7 @@ Dependencies for CUBRIDdb
   * OS    : Windows (x86 and x86_64)
             Linux (32bit and 64bit)
             Other Unix and Unix-like os
-  * Python: Python 2.4+
-            Python 3.0+
+  * Python: Python 3.0+
   * Compiler: to build from Source
             Visual Studio 2015 (Windows)
             GNU Developer Toolset 6 or higher
