@@ -18,6 +18,7 @@ from CUBRIDdb import FIELD_TYPE
 from time import localtime
 from datetime import date, datetime, time
 
+Binary = bytes
 Date = date
 Time = time
 Timestamp = datetime
@@ -67,8 +68,7 @@ InterfaceError = InterfaceError
 DatabaseError = DatabaseError
 NotSupportedError = NotSupportedError
 
-__all__ = [ 'Connect', 'connection', 'connect', 'connections', 'DatabaseError', 
-    'Error', 'InterfaceError', 'NotSupportedError', 'apilevel', 'Cursor', 
+__all__ = [ 'Connect', 'connection', 'connect', 'connections', 'DatabaseError',
+    'Error', 'InterfaceError', 'NotSupportedError', 'apilevel', 'Cursor',
     'DictCursor', 'paramstyle', 'threadsafety', 'STRING', 'BINARY', 'NUMBER',
     'DATE', 'TIME', 'TIMESTAMP', 'DATETIME', 'ROWID', 'SET', 'BLOB', 'CLOB'] 
-    
