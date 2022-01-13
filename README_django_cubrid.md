@@ -20,16 +20,12 @@ http://www.cubrid.org
 Prerequisites
 -------------
 * Python
-Being a Python Web framework, Django requires Python. It works with any Python
-version from 2.5 to 2.7 (due to backwards incompatibilities in Python 3.0, 
-Django does not currently work with Python 3.0).
+driver requires python 3.X version. Python version 2 is not support.
 
-So, when using django_cubrid, the Python version should be from 2.5 to 2.7.
 
 * Django
-The django_cubrid backend requires Django, so the Django should be installed.
-Now only supports Django-1.4. 
-It's tested in Django-1.4.2.
+Recommand using Django 2.1. Other versions may cause errors.
+
 
 Build
 -----
