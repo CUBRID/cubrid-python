@@ -2,10 +2,7 @@ import os
 import sys
 import django
 
-if django.VERSION >= (1, 8):
-    from django.db.backends.base.client import BaseDatabaseClient
-else:
-    from django.db.backends import BaseDatabaseClient
+from django.db.backends.base.client import BaseDatabaseClient
 
 
 class DatabaseClient(BaseDatabaseClient):
