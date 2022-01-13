@@ -64,13 +64,13 @@ class DatabaseTest(unittest.TestCase):
     def test_Exceptions(self):
         # Make sure required exceptions exist, and are in the
         # defined heirarchy.
-        self.failUnless(
+        self.assertTrue(
                 issubclass(self.driver.InterfaceError, self.driver.Error)
                 )
-        self.failUnless(
+        self.assertTrue(
                 issubclass(self.driver.DatabaseError,self.driver.Error)
                 )
-        self.failUnless(
+        self.assertTrue(
                 issubclass(self.driver.NotSupportedError,self.driver.Error)
                 )
 
@@ -148,12 +148,12 @@ class DatabaseTest(unittest.TestCase):
                     'no-result statements')
             cur.prepare("insert into test_cubrid value ('Blair')")
             cur.execute()
-            self.failUnless(cur.rowcount in (-1, 1),
+            self.assertTrue(cur.rowcount in (-1, 1),
                     'cursor.rowcount should == number or rows inserted, or '
                     'set to -1 after executing an insert statment')
             cur.prepare("select name from test_cubrid")
             cur.execute()
-            self.failUnless(cur.rowcount in (-1,1),
+            self.assertTrue(cur.rowcount in (-1,1),
                     'cursor.rowcount should == number of rows returned, or '
                     'set to -1 after executing a select statement')
             cur.close()
@@ -245,7 +245,7 @@ class DatabaseTest(unittest.TestCase):
             cur.prepare(t_affected_rows)
             cur.execute()
             self._prepare_data(cur)
-            self.failUnless(cur.affected_rows() in (-1, 6))
+            self.assertTrue(cur.affected_rows() in (-1, 6))
             self.assertEqual(cur.num_fields(), None,
                     'cursor.num_fields() should be None when not execute select statement')
             self.assertEqual(cur.num_rows(), None,
@@ -310,7 +310,7 @@ class DatabaseTest(unittest.TestCase):
             for i in range(len(samples_int)):
                 cur.bind_param(i+1, samples_int[i])
             cur.execute()
-            self.failUnless(cur.affected_rows() in (-1, 4))
+            self.assertTrue(cur.affected_rows() in (-1, 4))
         finally:
             cur.close()
             con.close()
@@ -325,7 +325,7 @@ class DatabaseTest(unittest.TestCase):
             cur.prepare("insert into test_cubrid values (?)")
             cur.bind_param(1, '3.14')
             cur.execute()
-            self.failUnless(cur.affected_rows() in (-1, 1))
+            self.assertTrue(cur.affected_rows() in (-1, 1))
         finally:
             cur.close()
             con.close()
@@ -387,6 +387,23 @@ class DatabaseTest(unittest.TestCase):
             cur.prepare('insert into test_cubrid values (?)')
             cur.bind_param(1, "2011-5-3 11:30:29")
             cur.execute()
+        finally:
+            cur.close()
+            con.close()
+
+    def test_bind_binary(self):
+        t_bind_bin = 'create table test_cubrid(id BIT VARYING(256))'
+        samples_bin = ['0B0100', '0B01010101010101', '0B111111111', '0B1111100000010101010110111111']
+        con = self._connect()
+        cur = con.cursor()
+        try:
+            cur.prepare(t_bind_bin)
+            cur.execute()
+            cur.prepare("insert into test_cubrid values (?), (?), (?), (?)")
+            for i in range(len(samples_bin)):
+                cur.bind_param(i+1, samples_bin[i])
+            cur.execute()
+            self.assertTrue(cur.affected_rows() in (-1, 4))
         finally:
             cur.close()
             con.close()
