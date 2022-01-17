@@ -615,6 +615,9 @@ class DBAPI20Test(unittest.TestCase):
         except AttributeError:
             self.fail("Driver doesn't define threadsafety")
 
+    def test_Binary(self):
+        b = self.driver.Binary([0x10, 0x20, 0x30])
+
     def test_Date(self):
         d1 = self.driver.Date(2011,3,17)
         d2 = self.driver.DateFromTicks(
