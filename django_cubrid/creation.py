@@ -12,7 +12,7 @@ TEST_DATABASE_PREFIX = 'test_'
 
 
 class DatabaseCreation(BaseDatabaseCreation):
-    def sql_for_inline_foreign_key_references(self, field, known_models, style):
+    def sql_for_inline_foreign_key_references(self, model, field, known_models, style):
         "Return the SQL snippet defining the foreign key reference for a field"
         qn = self.connection.ops.quote_name
         rel_to = field.rel.to
