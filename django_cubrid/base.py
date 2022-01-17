@@ -23,7 +23,6 @@ from django.db.backends import *
 from django.db.backends.signals import connection_created
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.base.features import BaseDatabaseFeatures
-from django.db.backends.base.operations import BaseDatabaseOperations
 
 from django_cubrid.schema import DatabaseSchemaEditor
 from django_cubrid.client import DatabaseClient
@@ -196,11 +195,20 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'endswith': "LIKE '%%' || {}",
         'iendswith': "LIKE '%%' || UPPER({})",
     }
+    class BitFieldFmt:
+        def __mod__(self, field_dict):
+            assert isinstance(field_dict, dict)
+            assert 'max_length' in field_dict
 
-    _data_types = {
+            s = 'BIT VARYING'
+            if field_dict['max_length'] is not None:
+                s += '(%i)' % (8 * field_dict['max_length'])
+            return s
+
+    data_types = {
         'AutoField': 'integer AUTO_INCREMENT',
         'BigAutoField': 'bigint AUTO_INCREMENT',
-        'BinaryField': 'blob',
+        'BinaryField': BitFieldFmt(),
         'BooleanField': 'short',
         'CharField': 'varchar(%(max_length)s)',
         'CommaSeparatedIntegerField': 'varchar(%(max_length)s)',
