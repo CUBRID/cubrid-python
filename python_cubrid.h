@@ -1,13 +1,13 @@
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "structmember.h"
 #include "datetime.h"
 #include "cas_cci.h"
 
-#if PY_MAJOR_VERSION >= 3
 #define PyString_FromString PyBytes_FromString
 #define PyString_AsString PyBytes_AsString
 #define PyString_Check PyBytes_Check
-#endif
 
 #define CUBRID_ER_NO_MORE_MEMORY	    -30001
 #define CUBRID_ER_INVALID_SQL_TYPE	    -30002
@@ -77,7 +77,7 @@ typedef struct
   PyObject_HEAD
   CURSOR_STATE state;
   int handle;
-  int connection;  
+  int connection;
   int col_count;
   int row_count;
   int bind_num;
@@ -85,7 +85,7 @@ typedef struct
   char charset[128];
   T_CCI_CUBRID_STMT sql_type;
   T_CCI_COL_INFO *col_info;
-  PyObject *description;  
+  PyObject *description;
 } _cubrid_CursorObject;
 
 typedef struct
