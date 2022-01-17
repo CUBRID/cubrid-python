@@ -75,8 +75,6 @@ class BaseCursor(object):
                 except NameError:
                     if isinstance(args[i], str):
                         pass
-                    elif isinstance(args[i], bytes):
-                        args[i] = args[i].decode(self.charset)
                     else:
                         args[i] = str(args[i])
                 else:
