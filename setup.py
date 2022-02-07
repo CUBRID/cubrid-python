@@ -10,6 +10,10 @@ if os.name == 'nt':
     from distutils import msvc9compiler
     msvc9compiler.VERSION = 14.0 #Visual studio 2015
 
+if sys.version <= '2':
+    print('No more supports python2, use python3 instead')
+    sys.exit(1)
+
 # Get the script directory.
 def get_script_dir():
     path = os.path.abspath(sys.argv[0])
