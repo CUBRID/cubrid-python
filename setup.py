@@ -1,6 +1,8 @@
 import os
 import sys
 import platform
+import subprocess
+import git
 
 from distutils.core import setup, Extension 
 
@@ -15,6 +17,16 @@ def get_script_dir():
         return path
     elif os.path.isfile(path):
         return os.path.dirname(path)
+
+# Update
+if os.path.isfile("cci-src/configure") == 0:
+    if sys.version_info >= (3, 7):
+        repo = git.Repo(".")
+        for sub in repo.submodules:
+            print('update submodule %s' % sub)
+            sub.update()
+    else:
+        subprocess.run(["git", "submodule", "update", "--init", "--recursive"])
 
 # set platform var
 os_type = ''
