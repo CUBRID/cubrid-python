@@ -2,6 +2,7 @@
 #include "structmember.h"
 #include "datetime.h"
 #include "cas_cci.h"
+#include "broker_cas_error.h"
 
 #if PY_MAJOR_VERSION >= 3
 #define PyString_FromString PyBytes_FromString
