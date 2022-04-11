@@ -1,6 +1,4 @@
 @echo off
-echo %VS140COMNTOOLS%
-
 if "%VS140COMNTOOLS%x" == "x" echo "Please add 'VS140COMNTOOLS' in the environment variable"
 
 echo arg is :%1%
