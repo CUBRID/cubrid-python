@@ -7,12 +7,9 @@ if [ -f cci-src/cci/.libs/libcascci.a ];then
 fi
 
 cd cci-src
-chmod +x configure
-touch configure.ac
 if [ "$1" = 'x86' ];then
-  ./configure 
+  echo "32bit Driver not support"
+  exit 9
 else
-  ./configure --enable-64bit 
+  sh build.sh
 fi
-
-make

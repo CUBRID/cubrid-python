@@ -41,8 +41,8 @@ else:
 
     os.system("chmod +x build_cci.sh")
     if platform.architecture()[0] == '32bit':
-        arch_type = 'x86'
-        os.system("./build_cci.sh x86")
+        print('32bit Driver not supported. Exit.')
+        sys.exit(1)
     elif platform.architecture()[0] == '64bit':
         arch_type = 'x64'
         os.system("./build_cci.sh x64")
@@ -58,9 +58,7 @@ if os_type == 'Windows':
     script_dir = os.getcwd()
     print ('script_dir:',script_dir)
     inc_dir_base = os.path.join(script_dir, "cci-src\\src\\base")
-    inc_dir_broker = os.path.join(script_dir, "cci-src\\src\\broker")
     inc_dir_cci = os.path.join(script_dir, "cci-src\\src\\cci")
-    inc_dir_compat = os.path.join(script_dir, "cci-src\\src\\compat")
 
     if arch_type == 'x86':
         lnk_dir = os.path.join(script_dir, "cci-src\\win\\cas_cci\\Win32\\Release")
@@ -74,17 +72,11 @@ else:
     script_dir = os.getcwd()
     print ('script_dir:',script_dir)
     inc_dir_base = os.path.join(script_dir, "cci-src/src/base")
-    inc_dir_broker = os.path.join(script_dir, "cci-src/src/broker")
     inc_dir_cci = os.path.join(script_dir, "cci-src/src/cci")
-    inc_dir_compat = os.path.join(script_dir, "cci-src/src/compat")
 
-    if arch_type == 'x86':
-        lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
-        lnk_dir_ex = os.path.join(script_dir, "cci-src/external/openssl/lib")
-    else:
-        lnk_dir = os.path.join(script_dir, "cci-src/cci/.libs")
-        lnk_dir_ex = os.path.join(script_dir, "cci-src/external/openssl/lib")
-
+    # Only 64bit Driver supported on Linux.
+    lnk_dir = os.path.join(script_dir, "cci-src/build_x86_64_release/cci")
+    lnk_dir_ex = os.path.join(script_dir, "cci-src/external/openssl/lib")
 
 # set ext_modules
 if os_type == 'Windows':
@@ -99,7 +91,7 @@ if os_type == 'Windows':
                            "ws2_32", "oleaut32", "advapi32",
                            "libssl", "libcrypto",
                            "gdi32", "user32"],
-                include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker, inc_dir_compat],
+                include_dirs=[inc_dir_base, inc_dir_cci],
                 sources=['python_cubrid.c'],
             )
         ]
@@ -113,7 +105,7 @@ else:
         ext_modules = [
             Extension(
                 name="_cubrid",
-                include_dirs=[inc_dir_base, inc_dir_cci, inc_dir_broker, inc_dir_compat],
+                include_dirs=[inc_dir_base, inc_dir_cci],
                 sources=['python_cubrid.c'],
                 library_dirs=[lnk_dir, lnk_dir_ex],
                 libraries=["pthread", "stdc++", "ssl", "crypto"],
