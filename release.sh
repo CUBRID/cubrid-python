@@ -7,6 +7,7 @@ temp_python_dir=$temp_dir/cubrid-python
 git_file=$(which git)
 first_version_file=$temp_python_dir/VERSION
 second_version_file=$shell_dir/VERSION
+major_start_date='2023-01-15'
 
 
 function show_usage ()
@@ -70,11 +71,17 @@ if [ ! -z $arg ]; then
   git submodule update
 fi
 
+cd $temp_python_dir
+SERIAL_NUMBER=$(git rev-list --after $major_start_date --count HEAD | awk '{ printf "%04d", $1 }' 2> /dev/null)
+
 cd $temp_dir
 rm -rf $temp_dir/cubrid-python/.git
 rm -rf $temp_dir/cubrid-python/cci-src/.git
 
 mv cubrid-python $FOLDER_NAME
-tar cvf cubrid-python-$VERSION.tar.gz $FOLDER_NAME
-mv cubrid-python-$VERSION.tar.gz $shell_dir
+tar cvf cubrid-python-$VERSION.$SERIAL_NUMBER.tar.gz $FOLDER_NAME
+mv cubrid-python-$VERSION.$SERIAL_NUMBER.tar.gz $shell_dir
 rm -rf $temp_dir
+
+echo "SERIAL_NUMBER : $SERIAL_NUMBER"
+echo "VERION $VERSION.$SERIAL_NUMBER Completed"
