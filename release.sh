@@ -7,7 +7,7 @@ temp_python_dir=$temp_dir/cubrid-python
 git_file=$(which git)
 first_version_file=$temp_python_dir/VERSION
 second_version_file=$shell_dir/VERSION
-major_start_date='2023-01-15'
+major_start_date='2017-06-27'
 
 
 function show_usage ()
