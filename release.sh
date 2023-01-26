@@ -79,7 +79,7 @@ rm -rf $temp_dir/cubrid-python/.git
 rm -rf $temp_dir/cubrid-python/cci-src/.git
 
 mv cubrid-python $FOLDER_NAME
-tar cvf cubrid-python-$VERSION.$SERIAL_NUMBER.tar.gz $FOLDER_NAME
+tar zcvf cubrid-python-$VERSION.$SERIAL_NUMBER.tar.gz $FOLDER_NAME
 mv cubrid-python-$VERSION.$SERIAL_NUMBER.tar.gz $shell_dir
 rm -rf $temp_dir
 
