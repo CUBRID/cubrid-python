@@ -10,7 +10,7 @@ if sys.version > '3':
 else:
     setup_file = "setup_2.py"
 
-version = "11.1.0.0001"
+version = "11.3.0.0001"
 
 #os.system(setup_file)
 setup_fh = open(setup_file)
