@@ -10,7 +10,10 @@ set TEMP_PYTHON_DIR=%TEMP_DIR%\cubrid-python
 set GIT_PATH=C:\Program Files\Git\bin\git.exe
 set FIRST_VERSION_FILE=%TEMP_PYTHON_DIR%\VERSION
 set SECOND_VERSION_FILE=%SHELL_DIR%\VERSION
+set GIT_SOURCE=https://github.com/CUBRID/cubrid-python.git
 set MAJOR_START_DATE=2017-06-27
+
+
 
 set PYTHON_EXECUTE_END=6
 set PYTHON_EXECUTE[0]=C:\python\python26\python.exe
@@ -47,7 +50,7 @@ mkdir "%TEMP_DIR%"
 cd /d "%TEMP_DIR%"
 
 echo "source download"
-"%GIT_PATH%" clone git@github.com:hwany7seo/cubrid-python.git -b new_windows_release_test --recursive
+"%GIT_PATH%" clone %GIT_SOURCE% --recursive
 
 echo "Handle commit ID if provided"
 if not "%ARG%"=="" (
