@@ -10,7 +10,7 @@ def find_git_executable():
             for path in os.environ['PATH'].split(os.pathsep):
                 git_path = os.path.join(path, 'git.exe')
                 if os.path.isfile(git_path) and os.access(git_path, os.X_OK):
-                    print(f"Windows Found git at: {git_path}")
+                    print("Windows Found git at: {}".format(git_path))
                     return git_path
     else:
         try:
@@ -21,7 +21,7 @@ def find_git_executable():
             if git_path:
                 git_path = git_path.decode().strip()
                 if os.path.isfile(git_path) and os.access(git_path, os.X_OK):
-                    print(f"Linux Found git at: {git_path}")
+                    print("Found git at: {}".format(git_path))
                     return git_path
         except:
             pass
@@ -53,12 +53,16 @@ git_executable = find_git_executable()
 serial_number = "0000"  # 기본값 설정
 
 if git_executable:
-    command = f'"{git_executable}" rev-list --after={major_start_date} --count HEAD'
+    command = '"{}" rev-list --after={} --count HEAD'.format(git_executable, major_start_date)
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
-    if process.returncode == 0:
-        count = stdout.decode().strip()
-        serial_number = f"{count:04d}"
+    
+    if process.returncode == 0 and stdout:
+        count = int(stdout.decode().strip())
+        serial_number = "{:04d}".format(count)
+        
+    if stderr:
+        print("Git command warning/error: {}".format(stderr.decode()))
 
 python_version = version + "." + str(serial_number)
 
