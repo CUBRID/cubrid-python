@@ -10,7 +10,7 @@ def find_git_executable():
             for path in os.environ['PATH'].split(os.pathsep):
                 git_path = os.path.join(path, 'git.exe')
                 if os.path.isfile(git_path) and os.access(git_path, os.X_OK):
-                    print(f"Found git at: {git_path}")
+                    print(f"Windows Found git at: {git_path}")
                     return git_path
     else:
         try:
@@ -21,7 +21,7 @@ def find_git_executable():
             if git_path:
                 git_path = git_path.decode().strip()
                 if os.path.isfile(git_path) and os.access(git_path, os.X_OK):
-                    print(f"Found git at: {git_path}")
+                    print(f"Linux Found git at: {git_path}")
                     return git_path
         except:
             pass
