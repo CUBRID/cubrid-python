@@ -4,6 +4,31 @@ import subprocess
 
 major_start_date='2017-06-27'
 
+def find_git_executable():
+    if os.name == 'nt':
+        if 'PATH' in os.environ:
+            for path in os.environ['PATH'].split(os.pathsep):
+                git_path = os.path.join(path, 'git.exe')
+                if os.path.isfile(git_path) and os.access(git_path, os.X_OK):
+                    print(f"Found git at: {git_path}")
+                    return git_path
+    else:
+        try:
+            which_process = subprocess.Popen(["which", "git"], 
+                                          stdout=subprocess.PIPE, 
+                                          stderr=subprocess.PIPE)
+            git_path, _ = which_process.communicate()
+            if git_path:
+                git_path = git_path.decode().strip()
+                if os.path.isfile(git_path) and os.access(git_path, os.X_OK):
+                    print(f"Found git at: {git_path}")
+                    return git_path
+        except:
+            pass
+
+    print("Git executable not found")
+    return None
+
 if os.name == 'nt':
     from distutils.core import setup
     vs2017_path = os.environ.get('VS2017COMNTOOLS',
@@ -24,11 +49,16 @@ else:
 with open('VERSION', 'r') as file:
     version = file.readline().strip()
 
-command = "git rev-list --after={0} --count HEAD | awk '{{ printf \"%04d\", $1 }}'".format(major_start_date)
-process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-stdout, stderr = process.communicate()
-if process.returncode == 0:
-    serial_number = stdout.decode().strip()
+git_executable = find_git_executable()
+serial_number = "0000"  # 기본값 설정
+
+if git_executable:
+    command = f'"{git_executable}" rev-list --after={major_start_date} --count HEAD'
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode == 0:
+        count = stdout.decode().strip()
+        serial_number = f"{count:04d}"
 
 python_version = version + "." + str(serial_number)
 
