@@ -324,7 +324,8 @@ _cubrid_escape_string (PyObject * self, PyObject * args, PyObject * kwargs)
   static char *kwList[] = { "escape_string", "no_backslash_escapes", NULL };
   int no_backslash_escapes = -1;
   char *unescape_string = NULL, *escape_string = NULL;
-  int len = -1, res;
+  Py_ssize_t len = -1;
+  int res;
   T_CCI_ERROR error;
 
   PyObject *op;
@@ -1381,7 +1382,8 @@ _cubrid_ConnectionObject_escape_string (_cubrid_ConnectionObject * self,
 					PyObject * args)
 {
   char *unescape_string = NULL, *escape_string = NULL;
-  int len = -1, res;
+  Py_ssize_t len = -1;
+  int res;
   PyObject *op;
   T_CCI_ERROR error;
 
@@ -3132,7 +3134,9 @@ static PyObject *
 _cubrid_LobObject_write (_cubrid_LobObject * self, PyObject * args)
 {
   char *buf = NULL, *type = NULL;
-  int len, res, type_len = 0;
+  Py_ssize_t len = -1;
+  Py_ssize_t type_len = 0;
+  int res = -1;
   T_CCI_ERROR error;
 
   if (!PyArg_ParseTuple (args, "s#|s", &buf, &len, &type))
