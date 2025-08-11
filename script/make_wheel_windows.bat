@@ -11,7 +11,7 @@ set GIT_PATH=C:\Program Files\Git\bin\git.exe
 set FIRST_VERSION_FILE=%TEMP_PYTHON_DIR%\VERSION
 set SECOND_VERSION_FILE=%SHELL_DIR%\VERSION
 rem set GIT_SOURCE=https://github.com/CUBRID/cubrid-python.git
-set GIT_SOURCE=git@github.com:hwany7seo/cubrid-python.git --recursive -b 3_10_test
+set GIT_SOURCE=git@github.com:hwany7seo/cubrid-python.git --recursive
 set MAJOR_START_DATE=2017-06-27
 
 set PYTHON_EXECUTE_END=4
