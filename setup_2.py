@@ -5,7 +5,7 @@ import os
 import sys
 import platform
 
-print("Driver Version:", python_version)
+print("Driver Version:", driver_version)
 
 #if sys.version >= '3':
 #    PY3 = True
@@ -44,7 +44,12 @@ else:
 
     os.system("chmod +x build_cci.sh")
     if 'clean' in sys.argv[1:]:
-       os.system("build_cci.sh clean")
+       os.system("./build_cci.sh clean")
+       os.system("rm -rf ./dist")
+       os.system("rm -rf ./build")
+       os.system("rm ./cubrid_ext/version.h")
+       os.system("rm -rf ./CUBRID_Python.egg-info")
+       exit(0)
     if platform.architecture()[0] == '32bit':
         print '32bit Driver not supported. Exit.'
         sys.exit(1)
@@ -97,7 +102,7 @@ if os_type == 'Windows':
                            "libssl", "libcrypto",
                            "gdi32", "user32"],
                 include_dirs=[inc_dir_base, inc_dir_cci],
-                sources=['python_cubrid.c'],
+                sources=['cubrid_ext/python_cubrid.c'],
 #                extra_compile_args=['/MD'],
             )
         ]
@@ -112,7 +117,7 @@ else:
             Extension(
                 name="_cubrid",
                 include_dirs=[inc_dir_base, inc_dir_cci],
-                sources=['python_cubrid.c'],
+                sources=['cubrid_ext/python_cubrid.c'],
                 library_dirs=[lnk_dir, lnk_dir_ex],
                 libraries=["pthread", "stdc++", "ssl", "crypto"],
                 extra_objects=[cci_static_lib]
@@ -138,7 +143,7 @@ else:
 # Install CUBRID-Python driver.
 setup(
     name="CUBRID-Python",
-    version=str(python_version),
+    version=str(driver_version),
     description="Python interface to CUBRID",
     long_description=\
             "Python interface to CUBRID conforming to the python DB API 2.0 "

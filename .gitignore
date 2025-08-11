@@ -10,3 +10,4 @@ CUBRID_Python.egg-info/
 dist/
 temp_release/
 tests/*.result
+cubrid_ext/version.h
