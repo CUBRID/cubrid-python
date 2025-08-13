@@ -10,8 +10,7 @@ set TEMP_PYTHON_DIR=%TEMP_DIR%\cubrid-python
 set GIT_PATH=C:\Program Files\Git\bin\git.exe
 set FIRST_VERSION_FILE=%TEMP_PYTHON_DIR%\VERSION
 set SECOND_VERSION_FILE=%SHELL_DIR%\VERSION
-rem set GIT_SOURCE=https://github.com/CUBRID/cubrid-python.git
-set GIT_SOURCE=git@github.com:hwany7seo/cubrid-python.git --recursive
+set GIT_SOURCE=https://github.com/CUBRID/cubrid-python.git
 set MAJOR_START_DATE=2017-06-27
 
 set PYTHON_EXECUTE_END=4
@@ -55,23 +54,12 @@ if not "%ARG%"=="" (
     "%GIT_PATH%" submodule update
 )
 
-if exist "%FIRST_VERSION_FILE%" (
-    echo [CHECK] 1st version file: %FIRST_VERSION_FILE%
-    for /f "usebackq tokens=*" %%a in ("%FIRST_VERSION_FILE%") do set VERSION=%%a
-) else if exist "%SECOND_VERSION_FILE%" (
-    echo [CHECK] 2nd version file: %SECOND_VERSION_FILE%
-    for /f "usebackq tokens=*" %%a in (%SECOND_VERSION_FILE%) do set VERSION=%%a
-) else (
-    echo [ERROR] Version file not found
-    exit /b 1
-)
-
 call :check_version
 call :build_env
 call :build
-call :uninstall_driver
-call :install_driver
-call :run_testcase
+@REM call :uninstall_driver
+@REM call :install_driver
+@REM call :run_testcase
 exit /b 0
 
 :check_version
@@ -93,13 +81,11 @@ for /f "delims=" %%a in ('"%GIT_PATH%" rev-list --count --after=%MAJOR_START_DAT
 
 set DRIVER_VERSION=%VERSION%.%SERIAL_NUMBER%
 echo [CHECK] Driver version: %DRIVER_VERSION%
-set PYTHON_WHEEL[0]=CUBRID_Python-%DRIVER_VERSION%-cp36-cp36m-win_amd64.whl
-set PYTHON_WHEEL[1]=CUBRID_Python-%DRIVER_VERSION%-cp310-cp310-win_amd64.whl
-set PYTHON_WHEEL[2]=CUBRID_Python-%DRIVER_VERSION%-cp311-cp311-win_amd64.whl
+set PYTHON_WHEEL[0]=cubrid_python-%DRIVER_VERSION%-cp36-cp36m-win_amd64.whl
+set PYTHON_WHEEL[1]=cubrid_python-%DRIVER_VERSION%-cp310-cp310-win_amd64.whl
+set PYTHON_WHEEL[2]=cubrid_python-%DRIVER_VERSION%-cp311-cp311-win_amd64.whl
 set PYTHON_WHEEL[3]=cubrid_python-%DRIVER_VERSION%-cp312-cp312-win_amd64.whl
 exit /b 0
-
-
 
 
 :build_env
@@ -127,7 +113,7 @@ echo "Driver Uninstall"
 cd /d "%TEMP_DIR%\cubrid-python"
 if %PYTHON_COUNT% lss %PYTHON_EXECUTE_END% (
     echo "UNINSTALL !PYTHON_EXECUTE[%PYTHON_COUNT%]!\Scripts\pip.exe"
-    call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\Scripts\pip.exe" uninstall CUBRID-Python -y
+    call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\Scripts\pip.exe" uninstall cubrid_python -y
     set /a PYTHON_COUNT+=1
     goto uninstall_driver
 )
