@@ -142,7 +142,7 @@ else:
 
 # Install CUBRID-Python driver.
 setup(
-    name="CUBRID-Python",
+    name="cubrid_python",
     version=str(driver_version),
     description="Python interface to CUBRID",
     long_description=\
