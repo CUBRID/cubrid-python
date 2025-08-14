@@ -142,6 +142,8 @@ if %PYTHON_COUNT% lss %PYTHON_EXECUTE_END% (
     call type test_cubrid.result >> test_python.log
     call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\python.exe" test_CUBRIDdb.py
     call type test_CUBRIDdb.result >> test_python.log
+    call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\python.exe" test_CUBRIDdb_crud.py
+    call type test_CUBRIDdb_crud.result >> test_python.log
     set /a PYTHON_COUNT+=1
     goto run_testcase
 )
