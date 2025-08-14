@@ -68,11 +68,13 @@ else:
 with open('VERSION', 'r') as file:
     version = file.readline().strip()
 
-command = "git rev-list --after={0} --count HEAD | awk '{{ printf \"%04d\", $1 }}'".format(major_start_date)
+command = 'git rev-list --after={0} --count HEAD'.format(major_start_date)
 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 stdout, stderr = process.communicate()
+serial_number = ''
 if process.returncode == 0:
-    serial_number = stdout.decode().strip()
+    count = int(stdout.decode().strip())
+    serial_number = '{0:04d}'.format(count)
 
 driver_version = version + "." + str(serial_number)
 
