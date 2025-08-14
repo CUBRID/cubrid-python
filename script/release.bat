@@ -13,8 +13,6 @@ set SECOND_VERSION_FILE=%SHELL_DIR%\VERSION
 set GIT_SOURCE=https://github.com/CUBRID/cubrid-python.git
 set MAJOR_START_DATE=2017-06-27
 
-
-
 set PYTHON_EXECUTE_END=6
 set PYTHON_EXECUTE[0]=C:\python\python26\python.exe
 set PYTHON_EXECUTE[1]=C:\python\python27\python.exe
@@ -73,15 +71,15 @@ if exist "%FIRST_VERSION_FILE%" (
 
 :build_env
 echo "Execute ENV Batch For Windows"
-call "%SHELL_DIR%\env_windows.bat"
+call "%TEMP_PYTHON_DIR%\env_windows.bat"
 
 :build
 rem Driver Build
 echo "Driver Build"
 cd /d "%TEMP_DIR%\cubrid-python"
 if %PYTHON_COUNT% lss %PYTHON_EXECUTE_END% (
-    echo "BUILD %%PYTHON_EXECUTE[%PYTHON_COUNT%]%%"
-    call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%" setup.py build
+    echo "BUILD !PYTHON_EXECUTE[%PYTHON_COUNT%]!"
+    call "!PYTHON_EXECUTE[%PYTHON_COUNT%]!" setup.py build
     set /a PYTHON_COUNT+=1
     goto build
 )

@@ -1,0 +1,13 @@
+include VERSION
+include setup_2.py
+include setup_3.py
+include MANIFEST.in
+include build_cci.sh
+include build_cci.bat
+include env_windows.bat
+include README.md
+include README_django_cubrid.md
+include _cubrid_exceptions.py
+recursive-include cubrid_ext *
+recursive-include cci-src *
+exclude cci-src/.git

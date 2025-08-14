@@ -1,0 +1,1 @@
+#define _CUBRID_VERSION_ "{{VERSION}}"

@@ -1,11 +1,15 @@
 
-from distutils.core import setup, Extension 
-
 import os
 import sys
 import platform
+import subprocess
 
-print("Driver Version:", python_version)
+if sys.version_info.minor >= 6:
+    from setuptools import setup, Extension    
+else:
+    from distutils.core import setup, Extension
+
+print('Driver Version:', driver_version)
 
 #if sys.version >= '3':
 #    PY3 = True
@@ -29,6 +33,11 @@ if platform.system() == 'Windows':
 
     if 'clean' in sys.argv[1:]:
         os.system("build_cci.bat clean")
+        os.system("del /s /q dist")
+        os.system("del /s /q build")
+        os.system("del /s /q cubrid_ext/version.h")
+        os.system("del /s /q CUBRID_Python.egg-info")
+        exit(0)
     elif platform.architecture()[0] == '32bit':
         arch_type = 'x86'
         os.system("build_cci.bat x86")
@@ -45,7 +54,12 @@ else:
 
     os.system("chmod +x build_cci.sh")
     if 'clean' in sys.argv[1:]:
-        os.system("build_cci.bat clean")
+        os.system("./build_cci.sh clean")
+        os.system("rm -rf ./dist")
+        os.system("rm -rf ./build")
+        os.system("rm ./cubrid_ext/version.h")
+        os.system("rm -rf ./CUBRID_Python.egg-info")
+        exit(0)
     elif platform.architecture()[0] == '32bit':
         print('32bit Driver not supported. Exit.')
         sys.exit(1)
@@ -98,7 +112,7 @@ if os_type == 'Windows':
                            "libssl", "libcrypto",
                            "gdi32", "user32"],
                 include_dirs=[inc_dir_base, inc_dir_cci],
-                sources=['python_cubrid.c'],
+                sources=['cubrid_ext/python_cubrid.c'],
                 extra_compile_args=['/MD'],
             )
         ]
@@ -113,7 +127,7 @@ else:
             Extension(
                 name="_cubrid",
                 include_dirs=[inc_dir_base, inc_dir_cci],
-                sources=['python_cubrid.c'],
+                sources=['cubrid_ext/python_cubrid.c'],
                 library_dirs=[lnk_dir, lnk_dir_ex],
                 libraries=["pthread", "stdc++", "ssl", "crypto"],
                 extra_objects=[cci_static_lib]
@@ -125,18 +139,17 @@ else:
 
 
 # set py_modules
-py_modules = ["CUBRIDdb.connections", "CUBRIDdb.cursors", "CUBRIDdb.FIELD_TYPE"]
-if sys.version >= '3':
-    py_modules += [
-        "django_cubrid.base", "django_cubrid.client", "django_cubrid.compiler",
-        "django_cubrid.creation", "django_cubrid.introspection",
-        "django_cubrid.schema", "django_cubrid.validation",
-    ]
+py_modules = [
+    "CUBRIDdb.connections", "CUBRIDdb.cursors", "CUBRIDdb.FIELD_TYPE",
+    "django_cubrid.base", "django_cubrid.client", "django_cubrid.compiler",
+    "django_cubrid.creation", "django_cubrid.introspection",
+    "django_cubrid.schema", "django_cubrid.validation",
+]
 
 # Install CUBRID-Python driver.
 setup(
-    name="CUBRID-Python",
-    version=str(python_version),
+    name="cubrid_python",
+    version=str(driver_version),
     description="Python interface to CUBRID",
     long_description=\
             "Python interface to CUBRID conforming to the python DB API 2.0 "

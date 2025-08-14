@@ -30,26 +30,48 @@ Dependencies for CUBRIDdb
 -------------------------
 ```
   * CUBRID: 8.4.0 or higher
-  * OS    : Windows (x86 and x86_64)
-            Linux (32bit and 64bit)
+  * OS    : Windows (x86_64)
+            Linux (64bit)
             Other Unix and Unix-like os
   * Python: Python 2.6+
             Python 3.0 ~ Python 3.6
   * Compiler: to build from Source
-            Visual Studio 2017 (Windows)
-            GNU Developer Toolset 8 or higher
+            Visual Studio 2017 (For Windows)
+            GNU Developer Toolset 8 or higher (For Linux)
+            ncurses-devel And python-devel (For Linux)
 ```
 
 Install for CUBRIDdb
 --------------------
   To build and install from source, you should move into the top-level directory 
   of the CUBRIDdb distribution and issue the following commands.
- ``` 
+
+  For Python 3.5 or Lower
+  ``` 
   $ git clone --recursive git@github.com:CUBRID/cubrid-python.git
   $ cd cubrid-python
   $ python setup.py build          (Windows: First, must run env_windows.bat.)
   $ sudo python setup.py install   (Windows: python setup.py install)
-```
+  ```
+
+  For Python 3.8 or Higher
+  ```
+  $ git clone --recursive git@github.com:CUBRID/cubrid-python.git
+  $ cd cubrid-python
+  $ python setup.py bdist_wheel
+  $ pip install dist/CUBRID_Python-{DriverVersion}-{Python tag}-{ABI tag}-{Platform tag}.whl
+  (On Linux, you may need sudo privileges depending on the python version.)
+  ```
+
+  If you can't build using setup.py directly in the future.
+  ```
+  $ git clone --recursive git@github.com:CUBRID/cubrid-python.git
+  $ cd cubrid-python
+  $ python -m build -w
+  $ pip install dist/CUBRID_Python-{DriverVersion}-{Python tag}-{ABI tag}-{Platform tag}.whl
+  (On Linux, you may need sudo privileges depending on the python version.)
+  ```
+
 Documents
 ---------
   * See Python DB API 2.0 Spec (http://www.python.org/dev/peps/pep-0249/)
