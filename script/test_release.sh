@@ -7,8 +7,7 @@ TEMP_PYTHON_DIR="$TEMP_DIR/cubrid-python"
 GIT_PATH="$(which git)"
 FIRST_VERSION_FILE="$TEMP_PYTHON_DIR/VERSION"
 SECOND_VERSION_FILE="$SHELL_DIR/VERSION"
-#GIT_SOURCE="https://github.com/CUBRID/cubrid-python.git"
-GIT_SOURCE="git@github.com:hwany7seo/cubrid-python.git --recursive -b crud_test"
+GIT_SOURCE="https://github.com/CUBRID/cubrid-python.git"
 MAJOR_START_DATE="2017-06-27"
 
 PYTHON_EXECUTE_END=4
@@ -49,7 +48,7 @@ main() {
     cd "$TEMP_DIR"
 
     echo "source download"
-    $GIT_PATH clone $GIT_SOURCE
+    $GIT_PATH clone $GIT_SOURCE --recursive
 
     echo "Handle commit ID if provided"
     if [ -n "$ARG" ]; then
