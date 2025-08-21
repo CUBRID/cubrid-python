@@ -18,6 +18,7 @@ from CUBRIDdb import FIELD_TYPE
 from time import localtime
 from datetime import date, datetime, time
 
+Binary = bytes
 Date = date
 Time = time
 Timestamp = datetime
@@ -56,11 +57,22 @@ CLOB = DBAPISet([FIELD_TYPE.CLOB])
 ROWID = DBAPISet()
 
 def Connect(*args, **kwargs):
-    """Factory function for connections.Connection."""
     from CUBRIDdb.connections import Connection
-    return Connection(*args, **kwargs)
 
-connect = connection = Connect
+    if args:
+        if len(args) >= 1:
+            kwargs['dsn'] = args[0]
+        if len(args) >= 2:
+            kwargs['user'] = args[1]
+        if len(args) >= 3:
+            kwargs['password'] = args[2]
+
+    return Connection(**kwargs)
+
+def connect(*args, **kwargs):
+    return Connect(*args, **kwargs)
+
+connection = Connect
 
 Error = Error
 InterfaceError = InterfaceError
@@ -70,5 +82,5 @@ NotSupportedError = NotSupportedError
 __all__ = [ 'Connect', 'connection', 'connect', 'connections', 'DatabaseError', 
     'Error', 'InterfaceError', 'NotSupportedError', 'apilevel', 'Cursor', 
     'DictCursor', 'paramstyle', 'threadsafety', 'STRING', 'BINARY', 'NUMBER',
-    'DATE', 'TIME', 'TIMESTAMP', 'DATETIME', 'ROWID', 'SET', 'BLOB', 'CLOB'] 
+    'DATE', 'TIME', 'TIMESTAMP', 'DATETIME', 'FLOAT', 'ROWID', 'SET', 'BLOB', 'CLOB'] 
     

@@ -360,6 +360,9 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         final_count = self.cur.fetchone()[0]
         self.assertEqual(final_count, '2', "After delete 2 rows of data should be present")
         
+        self.cur.execute(f'drop table {self.table_name}')
+        self.con.commit()
+
         print("✓ Complex CRUD operations successful")
         print(f"  - Initial data: 3 rows")
         print(f"  - Age increase under 30: 2 rows")

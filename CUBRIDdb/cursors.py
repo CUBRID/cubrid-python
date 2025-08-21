@@ -1,6 +1,6 @@
 import sys
 from CUBRIDdb import FIELD_TYPE
-
+from CUBRIDdb import InterfaceError
 
 class BaseCursor(object):
     """
@@ -17,6 +17,9 @@ class BaseCursor(object):
     def __init__(self, conn):
         self.con = conn
         self._cs = conn.connection.cursor()
+        if self._cs is None:
+            raise InterfaceError("Bad connection, invalid cursor")
+
         self.arraysize = 1
         self.rowcount = -1
         self.description = None
@@ -33,7 +36,7 @@ class BaseCursor(object):
 
     def __check_state(self):
         if self._cs is None:
-            raise Exception("The cursor has been closed. No operation is allowed any more.")
+            raise InterfaceError("The cursor has been closed. No operation is allowed any more.")
 
     def close(self):
         """Close the cursor, and no further queries will be possible."""

@@ -680,7 +680,15 @@ class DBAPI20Test(unittest.TestCase):
 
         self.assertEqual(ret, 0)
 
+    def test_connect1(self):
+        con = self.driver.connect(self.conStr, self.user, self.password)
+        self.assertIsNotNone(con)
+        con.close()
 
+    def test_connect2(self):
+        con = self.driver.connect(dsn=self.conStr, user=self.user, password=self.password, charset=self.charset)
+        self.assertEqual(con.charset, self.charset)
+        con.close()
         
 def suite():
     suite = unittest.TestSuite()
