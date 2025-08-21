@@ -1,11 +1,16 @@
 #include "python_cubrid.h"
 #include <fcntl.h>
+#include "version.h"
 
 /* Loading dynamic library need this header. */
 #ifdef MS_WINDOWS
 #include <windows.h>
 #else
 #include <dlfcn.h>
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 #endif
 
 #ifndef Py_TYPE
@@ -140,6 +145,17 @@ static PyObject *
 _cubrid_return_PyBool_FromLong (long n)
 {
   return PyBool_FromLong (n);
+}
+
+
+static const char *
+_cubrid_return_PyString_AsString (PyObject *buf)
+{
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_AsUTF8 (buf);
+#else
+  return PyString_AsString (buf);
+#endif
 }
 
 static int
@@ -399,7 +415,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
 {
   static char *kwList[] = { "url", "user", "passwd", NULL };
   char *url = NULL;
-  char *user = "public";
+  char *user = "";
   char *passwd = "";
   char buf[1024] = { '\0' };
   int con, res, level, autocommit, lock_timeout, max_string_len;
@@ -717,9 +733,9 @@ _cubrid_ConnectionObject_server_version (_cubrid_ConnectionObject * self,
 
 static char _cubrid_ConnectionObject_client_version__doc__[] =
   "client_version()\n\
-This function returns a string that represents the client library version.\n\
+This function returns a string that represents the Python driver version.\n\
 \n\
-Return a string that represents the CUBRID client library\n\
+Return a string that represents the CUBRID Python driver version\n\
 \n\
 Example::\n\
   import _cubrid\n\
@@ -731,16 +747,13 @@ static PyObject *
 _cubrid_ConnectionObject_client_version (_cubrid_ConnectionObject * self,
 					 PyObject * args)
 {
-  char info[256];
-
   if (!PyArg_ParseTuple (args, ""))
     {
       return NULL;
     }
 
-  cci_get_version_string (info, sizeof (info));
-  // Remove the prefix "VERSION="
-  return _cubrid_return_PyString_FromString (info + 8);
+  // Return the Python driver version instead of CCI version
+  return _cubrid_return_PyString_FromString (_CUBRID_VERSION_);
 }
 
 static char _cubrid_ConnectionObject_set_autocommit__doc__[] =
@@ -1010,7 +1023,7 @@ _cubrid_ConnectionObject_batch_execute (_cubrid_ConnectionObject * self,
   for (i = 0; i < count; ++i)
     {
       p_value = PyTuple_GET_ITEM (p_tube, i);
-      sql[i] = PyString_AsString (p_value);
+      sql[i] = _cubrid_return_PyString_AsString (p_value);
     }
   n_executed = cci_execute_batch (self->handle, count, sql, &result, &cci_error);
   if (n_executed < 0)
@@ -2153,6 +2166,7 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
   switch (type)
     {
     case CCI_U_TYPE_BIT:	//CCI_A_TYPE_BIT
+    case CCI_U_TYPE_VARBIT:
       res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
       if (res < 0)
 	{
@@ -2410,7 +2424,7 @@ _cubrid_row_to_tuple (_cubrid_CursorObject * self)
     {
       return handle_error (CUBRID_ER_INVALID_CURSOR, NULL);
     }
-  row = PyList_New (self->col_count);
+  row = PyTuple_New (self->col_count);
 
   for (i = 0; i < self->col_count; i++)
     {
@@ -2424,7 +2438,7 @@ _cubrid_row_to_tuple (_cubrid_CursorObject * self)
 	{
 	  val = _cubrid_CursorObject_dbval_to_pyvalue (self, type, i + 1);
 	}
-      PyList_SetItem (row, i, val);
+      PyTuple_SetItem (row, i, val);
     }
 
   return row;
@@ -3061,7 +3075,7 @@ _cubrid_LobObject_import (_cubrid_LobObject * self, PyObject * args)
       _cubrid_LobObject_create (self, *type);
     }
 
-  fd = open (filename, O_RDONLY, 0400);
+  fd = open (filename, O_RDONLY | O_BINARY, 0400);
   if (fd < 0)
     {
       return handle_error (CUBRID_ER_OPEN_FILE, NULL);
@@ -3092,6 +3106,8 @@ _cubrid_LobObject_import (_cubrid_LobObject * self, PyObject * args)
 
       pos += size;
     }
+
+  close (fd);
 
   Py_INCREF (Py_None);
   return Py_None;
@@ -3219,7 +3235,7 @@ _cubrid_LobObject_export (_cubrid_LobObject * self, PyObject * args)
       return handle_error (CUBRID_ER_LOB_NOT_EXIST, NULL);
     }
 
-  fp = open (filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+  fp = open (filename, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, 0666);
   if (fp < 0)
     {
       return handle_error (CUBRID_ER_OPEN_FILE, NULL);
@@ -3253,6 +3269,8 @@ _cubrid_LobObject_export (_cubrid_LobObject * self, PyObject * args)
 	  break;
 	}
     }
+
+  close (fp);
 
   Py_INCREF (Py_None);
   return Py_None;
@@ -3476,7 +3494,7 @@ _cubrid_str2bit (char *str)
 static PyObject *
 _cubrid_SetObject_import (_cubrid_SetObject * self, PyObject * args)
 {
-  char **data = NULL, **potinter = NULL;
+  char **data = NULL, **pointer = NULL;
   int *indicator = NULL;
   int i = 0, type, num = 1;
   T_CCI_SET set;
@@ -3498,21 +3516,21 @@ _cubrid_SetObject_import (_cubrid_SetObject * self, PyObject * args)
     }
   num = PyTuple_GET_SIZE (pTube);
   data = (char **) _cubrid_get_data_buf (type, num + 1);
-  potinter = (char **) _cubrid_get_data_buf (type, num + 1);
+  pointer = (char **) _cubrid_get_data_buf (type, num + 1);
   indicator = (int *) _cubrid_dup_buf (NULL, sizeof (int) * (num + 1));
 
 
   for (i = 0; i < num; ++i)
     {
       pValue = PyTuple_GET_ITEM (pTube, i);
-      potinter[i] = PyString_AsString (pValue);
+      pointer[i] = _cubrid_return_PyString_AsString (pValue);
 
-      if (potinter[i] == NULL || (strlen (potinter[i]) == 0))
+      if (pointer[i] == NULL || (strlen (pointer[i]) == 0))
 	{
 	  return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
 	}
 
-      if (strcmp (potinter[i], "NULL") == 0)
+      if (strcmp (pointer[i], "NULL") == 0)
 	{
 	  indicator[i] = 1;
 	}
@@ -3532,19 +3550,19 @@ _cubrid_SetObject_import (_cubrid_SetObject * self, PyObject * args)
 	{
 	  if (indicator[i] == 1)
 	    continue;
-	  temp_data_char = _cubrid_str2bit ((char *) potinter[i]);
+	  temp_data_char = _cubrid_str2bit ((char *) pointer[i]);
 	  if (temp_data_char == NULL)
 	    {
 	      goto handle_error;
 	    }
 	  pBit = (T_CCI_BIT *) data;
 	  pBit[i].buf = temp_data_char;
-	  pBit[i].size = strlen ((char *) potinter[i]) / 8 + 1;
+	  pBit[i].size = strlen ((char *) pointer[i]) / 8 + 1;
 	}
       break;
     default:
       err_code =
-	cci_set_make (&set, CCI_U_TYPE_STRING, num, potinter,
+	cci_set_make (&set, CCI_U_TYPE_STRING, num, pointer,
 		      (int *) indicator);
       if (err_code < 0)
 	{
@@ -3554,7 +3572,7 @@ _cubrid_SetObject_import (_cubrid_SetObject * self, PyObject * args)
       Py_INCREF (Py_None);
       free (data);
       free (indicator);
-      free (potinter);
+      free (pointer);
       return Py_None;
     }
 
@@ -3584,13 +3602,13 @@ _cubrid_SetObject_import (_cubrid_SetObject * self, PyObject * args)
   Py_INCREF (Py_None);
   free (data);
   free (indicator);
-  free (potinter);
+  free (pointer);
   return Py_None;
 
 handle_error:
   free (data);
   free (indicator);
-  free (potinter);
+  free (pointer);
   return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
 }
 
@@ -4112,7 +4130,6 @@ PyTypeObject _cubrid_CursorObject_type = {
   0,				/* tp_free */
 };
 
-#define _CUBRID_VERSION_	"11.0.0.0001"
 static char _cubrid_doc[] = "CUBRID API Module for Python";
 
 #if PY_MAJOR_VERSION >= 3
