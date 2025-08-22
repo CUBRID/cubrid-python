@@ -60,7 +60,7 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         
         self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         result = self.cur.fetchone()
-        self.assertEqual(result[0], '0', "Newly created table should be empty")
+        self.assertEqual(result[0], 0, "Newly created table should be empty")
         
         print("✓ Table creation successful")
 
@@ -104,7 +104,7 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         
         self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         result = self.cur.fetchone()
-        self.assertEqual(result[0], '5', "5 rows of data should be inserted")
+        self.assertEqual(result[0], 5, "5 rows of data should be inserted")
         
         print("✓ Data insertion successful")
 
@@ -253,7 +253,7 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         
         self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         before_delete = self.cur.fetchone()[0]
-        self.assertEqual(before_delete, '3', "Before delete 3 rows of data should be present")
+        self.assertEqual(before_delete, 3, "Before delete 3 rows of data should be present")
         
         delete_sql = f"DELETE FROM {self.table_name} WHERE age < 27"
         self.cur.execute(delete_sql)
@@ -261,7 +261,7 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         
         self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         after_delete = self.cur.fetchone()[0]
-        self.assertEqual(after_delete, '2', "After delete 2 rows of data should be present")
+        self.assertEqual(after_delete, 2, "After delete 2 rows of data should be present")
         
         self.cur.execute(f"SELECT name FROM {self.table_name} WHERE age < 27")
         deleted_data = self.cur.fetchall()
@@ -291,7 +291,7 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         
         self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         result = self.cur.fetchone()
-        self.assertEqual(result[0], '0', "Table should be created")
+        self.assertEqual(result[0], 0, "Table should be created")
         
         drop_sql = f"DROP TABLE {self.table_name}"
         self.cur.execute(drop_sql)
@@ -341,7 +341,7 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         
         self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         count = self.cur.fetchone()[0]
-        self.assertEqual(count, '3', "3 rows of data should be inserted")
+        self.assertEqual(count, 3, "3 rows of data should be inserted")
         
         update_sql = f"UPDATE {self.table_name} SET age = age + 1 WHERE age < 30"
         self.cur.execute(update_sql)
@@ -358,7 +358,7 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         
         self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         final_count = self.cur.fetchone()[0]
-        self.assertEqual(final_count, '2', "After delete 2 rows of data should be present")
+        self.assertEqual(final_count, 2, "After delete 2 rows of data should be present")
         
         self.cur.execute(f'drop table {self.table_name}')
         self.con.commit()

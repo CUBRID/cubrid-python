@@ -6,7 +6,7 @@ temp_dir=$shell_dir/temp_release
 temp_python_dir=$temp_dir/cubrid-python
 git_file=$(which git)
 first_version_file=$temp_python_dir/VERSION
-second_version_file=$shell_dir/VERSION
+second_version_file=$shell_dir/../VERSION
 major_start_date='2017-06-27'
 
 
@@ -44,17 +44,6 @@ if [ ! -z $arg ]; then
   echo "[CHECK] input commit id : $arg"
 fi
 
-if [ -f $1st_version_file ]; then
-  echo "[CHECK] 1st version file : $first_version_file"
-  VERSION=$(cat $first_version_file)
-else
-  echo "[CHECK] 2nd version file : $second_version_file"
-  VERSION=$(cat $second_version_file)
-fi
-
-echo "Python Driver Version is $VERSION"
-FOLDER_NAME=RB-$VERSION
-
 if [ -d $temp_dir ]; then
   rm -rf $temp_dir
 fi
@@ -70,6 +59,17 @@ if [ ! -z $arg ]; then
   git reset --hard $arg
   git submodule update
 fi
+
+if [ -f $1st_version_file ]; then
+  echo "[CHECK] 1st version file : $first_version_file"
+  VERSION=$(cat $first_version_file)
+else
+  echo "[CHECK] 2nd version file : $second_version_file"
+  VERSION=$(cat $second_version_file)
+fi
+
+echo "Python Driver Version is $VERSION"
+FOLDER_NAME=RB-$VERSION
 
 cd $temp_python_dir
 SERIAL_NUMBER=$(git rev-list --after $major_start_date --count HEAD | awk '{ printf "%04d", $1 }' 2> /dev/null)

@@ -12,7 +12,7 @@ def test_insert(cubrid_db_cursor, exc_many_table):
 
     cur.execute(f"select count(*) from {exc_many_table}")
     row = cur.fetchone()
-    assert row[0] == '2'
+    assert row[0] == 2
 
 
 def test_select(cubrid_db_cursor, exc_many_table):
@@ -74,7 +74,7 @@ def test_primary_insert_select(cubrid_db_cursor, exc_primary_tables):
 
     cur.execute(f"select count(*) from {ftb}")
     row = cur.fetchone()
-    assert row[0] == '6'
+    assert row[0] == 6
 
 
 def test_primary_update(cubrid_db_cursor, exc_primary_tables):
