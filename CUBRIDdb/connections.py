@@ -5,22 +5,27 @@ want to make your own subclasses. In most cases, you will probably
 override Connection.default_cursor with a non-standard Cursor class.
 
 """
+from _cubrid import connect as cubrid_connect
 from CUBRIDdb.cursors import *
-import _cubrid
 
 
 class Connection(object):
     """CUBRID Database Connection Object"""
 
-    def __init__(self, *args, **kwargs):
-
-        'Create a connecton to the database.'
-        self.charset = ''
-        kwargs2 = kwargs.copy()
-        self.charset = kwargs2.pop('charset', 'utf8')
-
-        self.connection = _cubrid.connect(*args, **kwargs2)
+    def __init__(self, *,
+        dsn = "",
+        user = "public",
+        password = "",
+        charset = "utf8",
+    ):
+        self.charset = charset
         self.fetch_value_converter = None
+
+        self.connection = cubrid_connect(
+            url = dsn,
+            user = user,
+            passwd = password,
+        )
 
     def __del__(self):
         pass
@@ -34,6 +39,10 @@ class Connection(object):
             cursorClass = DictCursor
         else:
             cursorClass = Cursor
+
+        if hasattr(self, 'fetch_value_converter'):
+            cursorClass.fetch_value_converter = self.fetch_value_converter
+
         return cursorClass(self)
 
     def set_autocommit(self, value):
@@ -75,6 +84,18 @@ class Connection(object):
         """
         return self.connection.set()
 
+    def ping(self):
+        """
+        Checks whether or not the connection to the server is working.
+        """
+        return self.connection.ping()
+
+    def get_last_insert_id(self):
+        """
+        Gets the primary key of the INSERT statement which executed at the last time.
+        """
+        return self.connection.insert_id()
+
     def close(self):
         """
         Close the connection now
@@ -88,8 +109,14 @@ class Connection(object):
         return self.connection.escape_string(buf)
 
     def server_version(self):
+        """
+        Returns a string that represents the CUBRID server version.
+        """
         return self.connection.server_version()
 
     def batch_execute(self, sql):
+        """
+        Executes more than one sql statement at the same time.
+        """
         return self.connection.batch_execute(sql)
 

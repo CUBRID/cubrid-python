@@ -11,3 +11,4 @@ dist/
 temp_release/
 tests/*.result
 cubrid_ext/version.h
+tests3/__pycache__/

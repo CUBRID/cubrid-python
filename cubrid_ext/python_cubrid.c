@@ -415,7 +415,7 @@ _cubrid_ConnectionObject_init (_cubrid_ConnectionObject * self,
 {
   static char *kwList[] = { "url", "user", "passwd", NULL };
   char *url = NULL;
-  char *user = "";
+  char *user = "public";
   char *passwd = "";
   char buf[1024] = { '\0' };
   int con, res, level, autocommit, lock_timeout, max_string_len;
@@ -1537,6 +1537,7 @@ _cubrid_CursorObject_init (_cubrid_CursorObject * self, PyObject * args,
   self->cursor_pos = 0;
 
   memset (self->charset, 0, sizeof (self->charset));
+  strncpy(self->charset, "utf8", sizeof (self->charset) - 1);
 
   return 0;
 }
