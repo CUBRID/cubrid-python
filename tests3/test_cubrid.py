@@ -117,7 +117,7 @@ def db_int_table(cubrid_cursor):
 
     cursor.prepare('insert into test_cubrid (val) values (?)')
     for i in range(0, 10):
-        cursor.bind_param(1, str(i))
+        cursor.bind_param(1, i)
         cursor.execute()
 
     yield cursor, connection
@@ -435,17 +435,16 @@ def test_bind_int(cubrid_cursor):
     numbers_int = [100, 200, 300, 400]
     inserted = _test_bind(cursor, 'id int', numbers)
     assert inserted == numbers_int
-    inserted = _test_bind(cursor, 'id int', numbers)
+    inserted = _test_bind(cursor, 'id int', numbers_int)
     assert inserted == numbers_int
 
 
 def test_bind_bigint(cubrid_cursor):
     cursor, _ = cubrid_cursor
-    numbers_bigint = ['-9223372036854775808', '9223372036854775807', '567890987654321012']
+    numbers_bigint = [-9223372036854775808, +9223372036854775807, 567890987654321012]
     bt_bigint = 21
     inserted = _test_bind(cursor, 'id bigint', numbers_bigint, bt_bigint)
-    str_inserted = [str(x) for x in inserted]
-    assert str_inserted == numbers_bigint
+    assert inserted == numbers_bigint
 
 
 def test_bind_float(cubrid_cursor):
@@ -454,7 +453,7 @@ def test_bind_float(cubrid_cursor):
     numbers_float = [3.14]
     inserted = _test_bind(cursor, 'id float', numbers)
     assert inserted == numbers_float
-    inserted = _test_bind(cursor, 'id float', numbers)
+    inserted = _test_bind(cursor, 'id float', numbers_float)
     assert inserted == numbers_float
 
 
@@ -475,7 +474,7 @@ def test_bind_date(cubrid_cursor):
     dates_dt = [datetime.datetime.strptime(x, "%Y-%m-%d").date() for x in dates]
     inserted = _test_bind(cursor, 'birthday date', dates)
     assert inserted == dates_dt
-    inserted = _test_bind(cursor, 'birthday date', dates)
+    inserted = _test_bind(cursor, 'birthday date', dates_dt)
     assert inserted == dates_dt
 
 
@@ -485,7 +484,7 @@ def test_bind_time(cubrid_cursor):
     times_dt = [datetime.datetime.strptime(x, "%H:%M:%S").time() for x in times]
     inserted = _test_bind(cursor, 'lunch time', times)
     assert inserted == times_dt
-    inserted = _test_bind(cursor, 'lunch time', times)
+    inserted = _test_bind(cursor, 'lunch time', times_dt)
     assert inserted == times_dt
 
 
@@ -495,7 +494,7 @@ def test_bind_datetime(cubrid_cursor):
     times_dt = [datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S") for x in times]
     inserted = _test_bind(cursor, 'xdt datetime', times)
     assert inserted == times_dt
-    inserted = _test_bind(cursor, 'xdt datetime', times)
+    inserted = _test_bind(cursor, 'xdt datetime', times_dt)
     assert inserted == times_dt
 
 
@@ -505,7 +504,7 @@ def test_bind_timestamp(cubrid_cursor):
     times_dt = [datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S") for x in times]
     inserted = _test_bind(cursor, 'lunch timestamp', times)
     assert inserted == times_dt
-    inserted = _test_bind(cursor, 'lunch timestamp', times)
+    inserted = _test_bind(cursor, 'lunch timestamp', times_dt)
     assert inserted == times_dt
 
 
@@ -516,9 +515,31 @@ def test_bind_datetime_now(cubrid_cursor):
     inserted = _test_bind(cursor, 'now datetime', [formatted_now])
     formatted_ins = inserted[0].strftime("%Y-%m-%d %H:%M:%S.%f")
     assert formatted_now[:-3] == formatted_ins[:-3]
-    inserted = _test_bind(cursor, 'now datetime', [formatted_now])
+    inserted = _test_bind(cursor, 'now datetime', [now])
     formatted_ins = inserted[0].strftime("%Y-%m-%d %H:%M:%S.%f")
     assert formatted_now[:-3] == formatted_ins[:-3]
+
+
+def test_bind_binary(cubrid_cursor):
+    cur, _ = cubrid_cursor
+    samples_bin = ['0B0100', '0B01010101010101', '0B111111111', '0B1111100000010101010110111111']
+
+    # Function to convert a binary string to bytes
+    def binary_str_to_bytes(binary_str):
+        # Convert to integer
+        integer_representation = int(binary_str, 2)
+
+        # Convert integer to bytes
+        # Calculate the length of the bytes object needed
+        bytes_length = (len(binary_str) + 7) // 8  # Round up division
+        return integer_representation.to_bytes(bytes_length, 'big')
+
+    samples_bytes = [binary_str_to_bytes(x) for x in samples_bin]
+
+    bt_char = 1
+    bt_varbit = 6
+    inserted = _test_bind(cur, 'id BIT VARYING(256)', samples_bytes, bt_varbit)
+    assert inserted == samples_bytes
 
 
 def test_row_to_tuple(cubrid_cursor, db_int_table):

@@ -33,9 +33,13 @@ class DBAPI20Test(unittest.TestCase):
     ddl2 = 'create table %sbarflys (name varchar(20))' % table_prefix
     ddl3 = 'create table %sdatatype (col1 int, col2 float, col3 numeric(12,3), \
             col4 time, col5 date, col6 datetime, col7 timestamp)' % table_prefix
+    ddl4 = 'create table %sset_table (id int, s set(varchar(20)))' % table_prefix
+    ddl5 = 'create table %sset_table_int (id int, s set(int))' % table_prefix
     xddl1 = 'drop table if exists %sbooze' % table_prefix
     xddl2 = 'drop table if exists %sbarflys' % table_prefix
     xddl3 = 'drop table if exists %sdatatype' % table_prefix
+    xddl4 = 'drop table if exists %sset_table' % table_prefix
+    xddl5 = 'drop table if exists %sset_table_int' % table_prefix
 
     def executeDDL1(self, cursor):
         cursor.execute(self.ddl1)
@@ -46,6 +50,12 @@ class DBAPI20Test(unittest.TestCase):
     def executeDDL3(self, cursor):
         cursor.execute(self.ddl3)
     
+    def executeDDL4(self, cursor):
+        cursor.execute(self.ddl4)
+
+    def executeDDL5(self, cursor):
+        cursor.execute(self.ddl5)
+
     def setup(self):
         pass
 
@@ -57,6 +67,8 @@ class DBAPI20Test(unittest.TestCase):
         cursor.execute(self.xddl1)
         cursor.execute(self.xddl2)
         cursor.execute(self.xddl3)
+        cursor.execute(self.xddl4)
+        cursor.execute(self.xddl5)
         connect.commit()
         cursor.close()
 
@@ -339,6 +351,80 @@ class DBAPI20Test(unittest.TestCase):
             beers.sort()
             self.assertEqual(beers[0], "Boag's", 'incorrect data retrieved')
             self.assertEqual(beers[1], "Cooper's", 'incorrect data retrieved')
+        finally:
+            con.close()
+
+    def test_set_type_binding(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL4(cur)
+            self.executeDDL5(cur)
+
+            # Scenario: set_type not provided (type inference)
+            # String set
+            cur.execute("insert into %sset_table values (?,?)" % self.table_prefix,
+                        (3, ('e', 'f')))
+            cur.execute("select s from %sset_table where id=3" % self.table_prefix)
+            res = cur.fetchone()[0]
+            self.assertEqual(set(res), {'e', 'f'})
+
+            # Integer set
+            cur.execute("insert into %sset_table_int values (?,?)" % self.table_prefix,
+                        (1, (10, 20)))
+            cur.execute("select s from %sset_table_int where id=1" % self.table_prefix)
+            res = cur.fetchone()[0]
+            self.assertEqual(set(res), {'10', '20'})
+        finally:
+            con.close()
+
+    def test_set_type_binding_setype(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL4(cur)
+
+            # Scenario: set_type provided correctly
+            # Using a single type for all set parameters
+            cur.execute("insert into %sset_table values (?,?)" % self.table_prefix,
+                        (1, ('a', 'b')), set_type=self.driver.FIELD_TYPE.VARCHAR)
+            cur.execute("select s from %sset_table where id=1" % self.table_prefix)
+            res = cur.fetchone()[0]
+            self.assertEqual(set(res), {'a', 'b'})
+
+            # Using a list of types
+            cur.execute("insert into %sset_table values (?,?)" % self.table_prefix,
+                        (2, ('c', 'd')), set_type=[None, self.driver.FIELD_TYPE.VARCHAR])
+            cur.execute("select s from %sset_table where id=2" % self.table_prefix)
+            res = cur.fetchone()[0]
+            self.assertEqual(set(res), {'c', 'd'})
+        finally:
+            con.close()
+
+    def test_set_type_binding_setype_fail(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL4(cur)
+            self.executeDDL5(cur)
+
+            # Scenario: Incorrect usage
+            # Case A: set_type list is too short, should fall back to inference
+            cur.execute("insert into %sset_table values (?,?)" % self.table_prefix,
+                        (4, ('g', 'h')), set_type=[self.driver.FIELD_TYPE.INT])
+            cur.execute("select s from %sset_table where id=4" % self.table_prefix)
+            res = cur.fetchone()[0]
+            self.assertEqual(set(res), {'g', 'h'})
+
+            # Case B: Type mismatch between set_type and data (should raise DatabaseError)
+            with self.assertRaises(self.driver.DatabaseError):
+                cur.execute("insert into %sset_table_int values (?,?)" % self.table_prefix,
+                            (2, ('x', 'y')), set_type=self.driver.FIELD_TYPE.INT)
+
+            # Case C: Mixed types in set data without set_type (should raise TypeError)
+            with self.assertRaises(TypeError):
+                cur.execute("insert into %sset_table values (?,?)" % self.table_prefix,
+                            (5, (1, 'z')))
         finally:
             con.close()
 
