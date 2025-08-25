@@ -19,10 +19,13 @@ class DBAPI20Test(unittest.TestCase):
     dbnames = xmlt.childNodes[0].getElementsByTagName('dbname')
     dbname = dbnames[0].childNodes[0].toxml()
     conStr = "CUBRID:"+ip+":"+port+":"+dbname+":::"
+    user = 'dba'
+    password = ''
+    charset = 'utf8'
     
-    connect_args = (conStr, 'dba', '')
+    connect_args = (conStr, user, password)
     connect_kw_args = {}
-    connect_kw_args2 = {'charset': 'utf8'}
+    connect_kw_args2 = {'charset': charset}
 
     table_prefix = 'dbapi20test_'
 

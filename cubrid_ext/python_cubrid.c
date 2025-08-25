@@ -142,11 +142,30 @@ _cubrid_return_PyInt_FromLong (long n)
 }
 
 static PyObject *
+_cubrid_return_PyLong_FromLongLong (long long n)
+{
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 2
+  return PyLong_FromLongLong (n);
+#else
+  return PyLong_FromLong (n);
+#endif
+}
+
+static PyObject *
 _cubrid_return_PyBool_FromLong (long n)
 {
   return PyBool_FromLong (n);
 }
 
+static PyObject *
+_cubrid_return_PyString_FromStringAndSize (const char *buf, Py_ssize_t size)
+{
+#if PY_MAJOR_VERSION >= 3
+  return PyBytes_FromStringAndSize (buf, size);
+#else
+  return PyString_FromStringAndSize (buf, size);
+#endif
+}
 
 static const char *
 _cubrid_return_PyString_AsString (PyObject *buf)
@@ -2157,8 +2176,10 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
   char *buffer;
   int num;
   T_CCI_DATE dt;
+  T_CCI_BIT bit_data;
   char *str_buffer;
   int len;
+  CUBRID_LONG_LONG int64_value;
 
   if (self->state == CURSOR_STATE_CLOSED)
     {
@@ -2166,48 +2187,33 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
     }
   switch (type)
     {
-    case CCI_U_TYPE_BIT:	//CCI_A_TYPE_BIT
+    case CCI_U_TYPE_BIT:
     case CCI_U_TYPE_VARBIT:
-      res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
-      if (res < 0)
-	{
-	  return handle_error (res, NULL);
-	}
-      if (ind < 0)
-	{
-	  Py_INCREF (Py_None);
-	  val = Py_None;
-	}
-      else
-	{
-	  len = strlen (buffer);
-	  str_buffer = (char *) malloc (len + 1);
-	  if (str_buffer == NULL)
-	    {
-	      Py_INCREF (Py_None);
-	      return Py_None;
-	    }
-	  memset (str_buffer, 0, len + 1);
-	  memcpy (str_buffer, buffer, len);
-	  /*while(str_buffer[len-1] == '0' && len>1)
-	     {
-	     str_buffer[len-1]='\0';
-	     len--;
-	     } */
-	  if (self->charset != NULL && *(self->charset) != '\0')
-	    {
-	      val =
-		_cubrid_return_PyUnicode_FromString (str_buffer,
-						     strlen (str_buffer),
-						     self->charset, NULL);
-	    }
-	  else
-	    {
-	      val = _cubrid_return_PyString_FromString (str_buffer);
-	    }
-	  free (str_buffer);
-	}
+      {
+	res = cci_get_data (self->handle, index, CCI_A_TYPE_BIT, &bit_data, &ind);
+	if (res < 0)
+	  {
+	    return handle_error (res, NULL);
+	  }
+	if (ind < 0)
+	  {
+	    Py_INCREF (Py_None);
+	    val = Py_None;
+	  }
+	else
+	  {
+	    if (bit_data.buf == NULL && bit_data.size > 0)
+	      {
+		return PyErr_Format(PyExc_SystemError, "CCI returned invalid data for BIT type: NULL buffer with size %d", bit_data.size);
+	      }
+	    val = _cubrid_return_PyString_FromStringAndSize((const char*)bit_data.buf, bit_data.size);
 
+	    if (val == NULL)
+	      {
+		return NULL;
+	      }
+	  }
+      }
       break;
     case CCI_U_TYPE_INT:
     case CCI_U_TYPE_SHORT:
@@ -2224,6 +2230,22 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
       else
 	{
 	  val = _cubrid_return_PyInt_FromLong (num);
+	}
+      break;
+    case CCI_U_TYPE_BIGINT:
+      res = cci_get_data (self->handle, index, CCI_A_TYPE_BIGINT, &int64_value, &ind);
+      if (res < 0)
+	{
+	  return handle_error (res, NULL);
+	}
+      if (ind < 0)
+	{
+	  Py_INCREF (Py_None);
+	  return Py_None;
+	}
+      else
+	{
+	  val = _cubrid_return_PyLong_FromLongLong (int64_value);
 	}
       break;
     case CCI_U_TYPE_FLOAT:
@@ -2336,7 +2358,67 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
 					dt.ss, 0);
 	}
       break;
+    case CCI_U_TYPE_JSON:
+    case CCI_U_TYPE_CHAR:
+    case CCI_U_TYPE_STRING:
+      res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
+      if (res < 0)
+        {
+          return handle_error (res, NULL);
+        }
+      if (ind < 0)
+        {
+          Py_INCREF (Py_None);
+          val = Py_None;
+        }
+      else
+        {
+          val = _cubrid_return_PyUnicode_FromString (buffer, strlen (buffer), self->charset, NULL);
+          if (val == NULL)
+            {
+	      PyErr_SetString (PyExc_ValueError, "String decoding failed");
+	      return Py_None;
+            }
+        }
+      break;
     default:
+      res = cci_get_data (self->handle, index, CCI_A_TYPE_INT, &num, &ind);
+      if (res == 0)
+        {
+          if (ind < 0)
+            {
+              Py_INCREF (Py_None);
+              return Py_None;
+            }
+
+          return PyLong_FromLong (num);
+        }
+
+      res = cci_get_data (self->handle, index, CCI_A_TYPE_DATE, &dt, &ind);
+      if (res == 0)
+        {
+          if (ind < 0)
+            {
+              Py_INCREF (Py_None);
+              val = Py_None;
+            }
+
+          if (dt.yr == 0)
+            {
+              return PyTime_FromTime(dt.hh, dt.mm, dt.ss, dt.ms * 1000);
+            }
+          if (dt.hh == 0 && dt.mm == 0 && dt.ss == 0 && dt.ms == 0)
+            {
+              return PyDate_FromDate (dt.yr, dt.mon, dt.day);
+            }
+          else
+            {
+              return PyDateTime_FromDateAndTime (dt.yr, dt.mon, dt.day, dt.hh,
+                                                 dt.mm, dt.ss, dt.ms * 1000);
+            }
+        }
+
+      // Unknown type, try str
       res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
       if (res < 0)
 	{
@@ -2354,6 +2436,11 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
 	      val =
 		_cubrid_return_PyUnicode_FromString (buffer, strlen (buffer),
 						     self->charset, NULL);
+	      if (val == NULL)
+	        {
+		  PyErr_SetString (PyExc_ValueError, "String decoding failed");
+		  return Py_None;
+		}
 	    }
 	  else
 	    {
@@ -2366,12 +2453,14 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
   return val;
 }
 
-/* Collection(set, multiset, sequence) 	-> List, 
-* Collection' item  -> String 
+/*
+ * Collection(set)                        -> Set,
+ * Collection(multiset, sequence)         -> List,
+ * Collection' item  -> String
 */
 
 static PyObject *
-_cubrid_CursorObject_dbset_to_pyvalue (_cubrid_CursorObject * self, int index)
+_cubrid_CursorObject_dbset_to_pyvalue (_cubrid_CursorObject * self, int type, int index)
 {
   int i, res, ind;
   PyObject *val;
@@ -2397,18 +2486,49 @@ _cubrid_CursorObject_dbset_to_pyvalue (_cubrid_CursorObject * self, int index)
     }
 
   set_size = cci_set_size (set);
-  val = PyList_New (set_size);
+
+  if (CCI_IS_SET_TYPE (type))
+    {
+      val = PySet_New (NULL);
+    }
+  else
+    {
+      val = PyList_New (set_size);
+    }
 
   for (i = 0; i < set_size; i++)
     {
       res = cci_set_get (set, i + 1, CCI_A_TYPE_STR, &buffer, &ind);
       if (res < 0)
-	{
-	  return handle_error (res, NULL);
-	}
+        {
+          cci_set_free (set);
+          return handle_error (res, NULL);
+        }
 
-      e = _cubrid_return_PyString_FromString (buffer);
-      PyList_SetItem (val, i, e);
+      if (buffer == NULL)
+        {
+          e = _cubrid_return_PyString_FromString ("");
+        }
+      else
+        {
+          e = _cubrid_return_PyUnicode_FromString (buffer, strlen (buffer), self->charset, NULL);
+          if (e == NULL)
+            {
+              PyErr_SetString (PyExc_ValueError, "String decoding failed");
+              cci_set_free (set);
+              return handle_error (res, NULL);
+            }
+        }
+
+      if (CCI_IS_SET_TYPE (type))
+        {
+          PySet_Add (val, e);
+          Py_DECREF (e);
+        }
+      else
+        {
+          PyList_SetItem (val, i, e);
+        }
     }
 
   cci_set_free (set);
@@ -2433,7 +2553,7 @@ _cubrid_row_to_tuple (_cubrid_CursorObject * self)
 
       if (CCI_IS_COLLECTION_TYPE (type))
 	{
-	  val = _cubrid_CursorObject_dbset_to_pyvalue (self, i + 1);
+	  val = _cubrid_CursorObject_dbset_to_pyvalue (self, type, i + 1);
 	}
       else
 	{
@@ -2468,7 +2588,7 @@ _cubrid_row_to_dict (_cubrid_CursorObject * self)
 
       if (CCI_IS_COLLECTION_TYPE (type))
 	{
-	  val = _cubrid_CursorObject_dbset_to_pyvalue (self, i + 1);
+	  val = _cubrid_CursorObject_dbset_to_pyvalue (self, type, i + 1);
 	}
       else
 	{
@@ -3407,7 +3527,7 @@ _cubrid_LobObject_seek (_cubrid_LobObject * self, PyObject * args)
       return handle_error (CUBRID_ER_INVALID_PARAM, NULL);
     }
 
-  return PyLong_FromLongLong (self->pos);
+  return _cubrid_return_PyLong_FromLongLong (self->pos);
 }
 
 static void

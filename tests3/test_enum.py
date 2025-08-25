@@ -22,7 +22,7 @@ def test_enum_01_select(cubrid_db_cursor, enum_01_table):
 
     cur.execute(f"select count(*) from {enum_01_table}")
     row = cur.fetchone()
-    assert row[0] == '3'
+    assert row[0] == 3
 
 
 def test_enum_02_insert(cubrid_db_cursor, enum_02_table):
@@ -37,7 +37,7 @@ def test_enum_02_select(cubrid_db_cursor, enum_02_table):
 
     cur.execute(f"select count(*) from {enum_02_table}")
     row = cur.fetchone()
-    assert row[0] == '1'
+    assert row[0] == 1
 
 
 def test_enum_03_insert(cubrid_db_cursor, enum_03_table):
@@ -64,7 +64,7 @@ def test_enum_03_select(cubrid_db_cursor, enum_03_table):
 
     cur.execute(f"select count(*) from {enum_03_table}")
     row = cur.fetchone()
-    assert row[0] == '0'
+    assert row[0] == 0
 
 
 def test_enum_04_update_1(cubrid_db_cursor, enum_04_table):

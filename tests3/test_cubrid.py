@@ -556,7 +556,7 @@ def test_collection(cubrid_cursor, db_collection_table):
     cur.execute()
 
     rows = _fetchall(cur)
-    assert rows == [(['1'], ['1', '1'], ['1', '1'])]
+    assert rows == [({'1'}, ['1', '1'], ['1', '1'])]
 
 
 def test_collection_2(cubrid_cursor, db_collection_table):
@@ -569,7 +569,7 @@ def test_collection_2(cubrid_cursor, db_collection_table):
     cur.execute()
 
     rows = _fetchall(cur)
-    assert rows == [(['1'], ['1', '1'], ['1', '1'])]
+    assert rows == [({'1'}, ['1', '1'], ['1', '1'])]
 
 
 def _are_files_identical(file1_path, file2_path, chunk_size=4096):

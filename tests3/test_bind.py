@@ -30,8 +30,7 @@ def test_bind_int(cubrid_db_cursor):
 def test_bind_bigint(cubrid_db_cursor):
     numbers_bigint = [-9223372036854775808, +9223372036854775807, 567890987654321012]
     inserted = _test_binding(cubrid_db_cursor[0], 'x bigint', numbers_bigint)
-    str_numbers_bigint = [str(n) for n in numbers_bigint]
-    assert inserted == str_numbers_bigint
+    assert inserted == numbers_bigint
 
 
 def test_bind_float(cubrid_db_cursor):
@@ -93,7 +92,8 @@ def test_bind_timestamp(cubrid_db_cursor):
 
 
 def test_bind_binary(cubrid_db_cursor):
-    samples_bin = ['0100', '01010101010101', '1111111110', '1111100000010101010110111111']
+    samples_bin = ['0100', '01010101010101', '1111111111', '1111100000010101010110111111']
+    result_bin = [b'\x01\x00', b'\x01\x01\x01\x01\x01\x01\x01', b'\x11\x11\x11\x11\x11', b'\x11\x11\x10\x00\x00\x01\x01\x01\x01\x01\x10\x11\x11\x11']
 
     # Function to convert a binary string to bytes
     def binary_str_to_bytes(binary_str):
@@ -108,4 +108,5 @@ def test_bind_binary(cubrid_db_cursor):
     samples_bytes = [binary_str_to_bytes(b) for b in samples_bin]
 
     inserted = _test_binding(cubrid_db_cursor[0], 'xbit BIT VARYING(256)', samples_bin)
-    assert inserted == samples_bin
+    #samples_bytes = [bytes(int(b, 2)) for b in samples_bin]
+    assert inserted == result_bin

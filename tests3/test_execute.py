@@ -58,7 +58,7 @@ def test_execute_select(cubrid_db_cursor, exc_table):
 
     cur.execute(f"select count(*) from {exc_table} where a >= 0")
     row = cur.fetchone()
-    assert row[0] == '100'
+    assert row[0] == 100
 
 
 def test_execute_update(cubrid_db_cursor, exc_table):
@@ -84,7 +84,7 @@ def test_execute_delete(cubrid_db_cursor, exc_table):
 
     cur.execute(f"select count(*) from {exc_table} where a >= 0")
     row = cur.fetchone()
-    assert row[0] == '4'
+    assert row[0] == 4
 
 
 def test_execute_error_statement(cubrid_db_cursor):
@@ -139,7 +139,7 @@ def test_index_select_recompile(cubrid_db_cursor, exc_index_tables):
 
     cur.execute(f"select /*+ recompile */ count(*) from {t} use index (_t_id) where id > 1;")
     row = cur.fetchone()
-    assert row[0] == '3'
+    assert row[0] == 3
 
 
 def test_index_select_join(cubrid_db_cursor, exc_index_tables):
@@ -154,7 +154,7 @@ def test_index_select_join(cubrid_db_cursor, exc_index_tables):
                 f"use index (_u_id) on {t}.fk = {u}.id where right(text, 2) < 'zz' and "
                 f"{u}.id < 100")
     row = cur.fetchone()
-    assert row[0] == '5'
+    assert row[0] == 5
 
 
 def test_index_select_subselect(cubrid_db_cursor, exc_index_tables):
@@ -169,7 +169,7 @@ def test_index_select_subselect(cubrid_db_cursor, exc_index_tables):
                 f"(select * from {u} force index (_u_id) where right(text, 2) < 'zz') x on "
                 f"{t}.fk = x.id")
     row = cur.fetchone()
-    assert row[0] == '5'
+    assert row[0] == 5
 
 
 def test_index_update(cubrid_db_cursor, exc_index_tables):
@@ -184,7 +184,7 @@ def test_index_update(cubrid_db_cursor, exc_index_tables):
 
     cur.execute(f"select count(*) from {t} where val=1000")
     row = cur.fetchone()
-    assert row[0] == '3'
+    assert row[0] == 3
 
 
 def test_index_delete(cubrid_db_cursor, exc_index_tables):
@@ -202,7 +202,7 @@ def test_partition_select_empty_table(cubrid_db_cursor, exc_part_table):
 
     cur.execute(f"select count(*) from {exc_part_table}")
     row = cur.fetchone()
-    assert row[0] == '0'
+    assert row[0] == 0
 
     cur.execute(f"select max(id) from {exc_part_table}")
     row = cur.fetchone()
@@ -284,7 +284,7 @@ def test_partition_delete(cubrid_db_cursor, exc_part_table):
 
     cur.execute(f"select count(*) from {exc_part_table} where id >= 0")
     row = cur.fetchone()
-    assert row[0] == '2'
+    assert row[0] == 2
 
 
 def test_primary_insert(cubrid_db_cursor, exc_primary_tables):
@@ -336,14 +336,14 @@ def test_primary_delete(cubrid_db_cursor, exc_primary_tables):
 
     cur.execute(f"select count(*) from {ptb} ")
     row = cur.fetchone()
-    assert row[0] == '4'
+    assert row[0] == 4
 
     rc = cur.execute(f"delete from {ftb} where album like '003%'")
     assert rc == 2
 
     cur.execute(f"select count(*) from {ftb}")
     row = cur.fetchone()
-    assert row[0] == '4'
+    assert row[0] == 4
 
 
 def test_rollback(cubrid_db_cursor, exc_rollback_table):
@@ -399,7 +399,7 @@ def test_select_calculate(cubrid_db_cursor):
 
     cur.execute("select date'2001-02-03' - datetime'2001-02-02 12:00:00 am'")
     row = cur.fetchone()
-    assert row[0] == '86400000'
+    assert row[0] == 86400000
 
     cur.execute("SELECT date'2002-01-01' + '10'")
     row = cur.fetchone()
