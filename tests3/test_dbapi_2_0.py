@@ -182,12 +182,12 @@ def test_rowcount(cubrid_db_cursor, booze_table):
     cur.execute(f"insert into {booze_table} value ('Victoria Bitter')")
     assert cur.rowcount in (-1, 1),\
         'cursor.rowcount should == number or rows inserted, or '\
-        'set to -1 after executing an insert statment'
+        'set to -1 after executing an insert statement'
 
     cur.execute(f'select name from {booze_table}')
     assert cur.rowcount in (-1, 1),\
         'cursor.rowcount should == number or rows inserted, or '\
-        'set to -1 after executing an insert statment'
+        'set to -1 after executing an insert statement'
 
     table_name = f'{TABLE_PREFIX}barflys'
     try:

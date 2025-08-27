@@ -33,10 +33,10 @@ def get_set_element_type(iterable):
 
     This function iterates over each element in the provided iterable and
     determines its data type based on predefined type categories. The categories
-    include INT for integers, FLOAT for floating point numbers, MONETARY for Decimal,
+    include INT for integers, FLOAT for floating point numbers, NUMERIC for Decimal,
     DATE for date objects, TIME for time objects, DATETIME for datetime objects,
     VARBIT for bytes, and VARCHAR for strings. These categories are represented by
-    field_type attributes.
+    FIELD_TYPE attributes.
 
     The function checks the type of each element and assigns it to one of the
     predefined categories. If all elements are of the same type, it returns
@@ -155,7 +155,7 @@ class BaseCursor(object):
         - If the argument is an iterable (except strings and bytes), its element type
         is determined using 'get_set_element_type', and then it's bound as a set.
         - If the argument is a bytes object, it is converted to a binary string using
-        'bytes_to_binstr' and bound with type 'field_type.VARBIT'.
+        'bytes_to_binary_string' and bound with type 'FIELD_TYPE.VARBIT'.
         - For strings and other data types, the argument is bound directly or after
         converting to string, respectively.
 

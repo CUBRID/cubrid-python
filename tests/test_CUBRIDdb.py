@@ -378,7 +378,7 @@ class DBAPI20Test(unittest.TestCase):
         finally:
             con.close()
 
-    def test_set_type_binding_setype(self):
+    def test_set_type_binding_set_type(self):
         con = self._connect()
         try:
             cur = con.cursor()
@@ -401,7 +401,7 @@ class DBAPI20Test(unittest.TestCase):
         finally:
             con.close()
 
-    def test_set_type_binding_setype_fail(self):
+    def test_set_type_binding_set_type_fail(self):
         con = self._connect()
         try:
             cur = con.cursor()
