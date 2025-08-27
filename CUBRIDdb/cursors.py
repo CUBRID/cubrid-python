@@ -73,15 +73,15 @@ def get_set_element_type(iterable):
             t = FIELD_TYPE.TIME
         elif isinstance(obj, datetime):
             t = FIELD_TYPE.DATETIME
-        elif isinstance(obj, bytes):
-            t = FIELD_TYPE.VARBIT
         elif isinstance(obj, str):
             t = FIELD_TYPE.VARCHAR
+        elif isinstance(obj, bytes):
+            t = FIELD_TYPE.VARBIT
 
         if chosen_type is None:
             chosen_type = t
         elif t is not chosen_type:
-            raise TypeError(f"Iterable contains elements of different types: {t} != {chosen_type}")
+            raise TypeError("Iterable contains elements of different types: {0} != {1}".format(t, chosen_type))
 
     return chosen_type
 
