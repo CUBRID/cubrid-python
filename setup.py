@@ -2,6 +2,11 @@ import os
 import sys
 import subprocess
 
+if sys.version_info.minor >= 6:
+    from setuptools import setup
+else:
+    from distutils.core import setup
+
 major_start_date='2017-06-27'
 
 print('Python version_info:', sys.version_info)
@@ -17,11 +22,6 @@ if 'bdist_wheel' in sys.argv[1:]:
         sys.exit(1)
 
 if os.name == 'nt':
-    if sys.version_info.minor >= 6:
-        from setuptools import setup
-    else:
-        from distutils.core import setup
-    
     print("Setting up Visual Studio environment...")
     
     os.environ['DISTUTILS_USE_SDK'] = '1'
@@ -32,7 +32,7 @@ if os.name == 'nt':
         os.environ['PATH'] = os.path.join(vs2017_path, "bin", "Hostx64", "x64") + os.pathsep + os.environ['PATH']
         os.environ['INCLUDE'] = os.path.join(vs2017_path, "include") + os.pathsep + os.environ.get('INCLUDE', '')
         os.environ['LIB'] = os.path.join(vs2017_path, "lib", "x64") + os.pathsep + os.environ.get('LIB', '')
-        print(f"Using Visual Studio 2017 at: {vs2017_path}")
+        print("Using Visual Studio 2017 at: {0}".format(vs2017_path))
     else:
         print("Visual Studio 2017 not found, using system PATH")
     
@@ -41,7 +41,7 @@ if os.name == 'nt':
         os.environ['INCLUDE'] = os.path.join(sdk_path, "shared") + os.pathsep + os.environ.get('INCLUDE', '')
         os.environ['INCLUDE'] = os.path.join(sdk_path, "ucrt") + os.pathsep + os.environ.get('INCLUDE', '')
         os.environ['INCLUDE'] = os.path.join(sdk_path, "um") + os.pathsep + os.environ.get('INCLUDE', '')
-        print(f"Using Windows SDK at: {sdk_path}")
+        print("Using Windows SDK at: {0}".format(sdk_path))
     else:
         print("Windows SDK not found, using system INCLUDE")
     
@@ -49,14 +49,14 @@ if os.name == 'nt':
     if os.path.exists(sdk_lib_path):
         os.environ['LIB'] = os.path.join(sdk_lib_path, "ucrt", "x64") + os.pathsep + os.environ.get('LIB', '')
         os.environ['LIB'] = os.path.join(sdk_lib_path, "um", "x64") + os.pathsep + os.environ.get('LIB', '')
-        print(f"Using Windows SDK lib at: {sdk_lib_path}")
+        print("Using Windows SDK lib at: {0}".format(sdk_lib_path))
     else:
         print("Windows SDK lib not found, using system LIB")
     
     sdk_bin_path = r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64"
     if os.path.exists(sdk_bin_path):
         os.environ['PATH'] = sdk_bin_path + os.pathsep + os.environ['PATH']
-        print(f"Using Windows SDK bin at: {sdk_bin_path}")
+        print("Using Windows SDK bin at: {0}".format(sdk_bin_path))
     else:
         print("Windows SDK bin not found, using system PATH")
 
