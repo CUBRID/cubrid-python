@@ -151,7 +151,7 @@ class BaseCursor(object):
 
         For each argument in 'args':
         - If the argument is None, it is skipped.
-        - If the argument is a boolean, it is converted to '1' or '0' string.
+        - If the argument is a boolean, it is converted to '1' or '0' integer.
         - If the argument is an iterable (except strings and bytes), its element type
         is determined using 'get_set_element_type', and then it's bound as a set.
         - If the argument is a bytes object, it is converted to a binary string using

@@ -1662,13 +1662,13 @@ optimal performance and compatibility.\n\
 \n\
 Supported Python types for binding include:\n\
   - int (mapped to CUBRID INT or BIGINT based on size)\n\
-  - float (mapped to CUBRID FLOAT or DOUBLE)\n\
+  - float (mapped to CUBRID DOUBLE)\n\
   - decimal.Decimal (mapped to CUBRID NUMERIC)\n\
   - str (encoded as UTF-8 bytes, mapped to CUBRID CHAR or STRING types)\n\
   - bytes (directly mapped to CUBRID BIT or BIT VARYING based on bind_type)\n\
   - date (mapped to CUBRID DATE)\n\
   - time (mapped to CUBRID TIME)\n\
-  - datetime (mapped to CUBRID TIMESTAMP)\n\
+  - datetime (mapped to CUBRID DATETIME)\n\
 \n\
 The function automatically determines the appropriate CUBRID data type based on\n\
 the Python type of the value argument, unless the bind_type is explicitly specified.\n\
