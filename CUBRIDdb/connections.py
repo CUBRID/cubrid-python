@@ -12,7 +12,7 @@ from CUBRIDdb.cursors import *
 class Connection(object):
     """CUBRID Database Connection Object"""
 
-    def __init__(self, *,
+    def __init__(self,
         dsn = "",
         user = "public",
         password = "",

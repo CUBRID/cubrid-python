@@ -39,11 +39,11 @@ class CUBRIDdb_crud_test(unittest.TestCase):
     def test_01_create_table(self):
         print("\n=== Test : Create Table ===")
         
-        self.cur.execute(f'DROP TABLE IF EXISTS {self.table_name}')
+        self.cur.execute('DROP TABLE IF EXISTS {0}'.format(self.table_name))
         self.con.commit()
         
-        create_sql = f"""
-        CREATE TABLE {self.table_name} (
+        create_sql = """
+        CREATE TABLE {0} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             age INT,
@@ -55,10 +55,10 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         )
         """
         
-        self.cur.execute(create_sql)
+        self.cur.execute(create_sql.format(self.table_name))
         self.con.commit()
         
-        self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+        self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
         result = self.cur.fetchone()
         self.assertEqual(result[0], 0, "Newly created table should be empty")
         
@@ -67,9 +67,9 @@ class CUBRIDdb_crud_test(unittest.TestCase):
     def test_02_insert_data(self):
         print("\n=== Test : Insert Data ===")
         
-        self.cur.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        create_sql = f"""
-        CREATE TABLE {self.table_name} (
+        self.cur.execute('DROP TABLE IF EXISTS {0}'.format(self.table_name))
+        create_sql = """
+        CREATE TABLE {0} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             age INT,
@@ -80,11 +80,11 @@ class CUBRIDdb_crud_test(unittest.TestCase):
             description VARCHAR(500)
         )
         """
-        self.cur.execute(create_sql)
+        self.cur.execute(create_sql.format(self.table_name))
         self.con.commit()
         
-        insert_sql = f"""
-        INSERT INTO {self.table_name} 
+        insert_sql = """
+        INSERT INTO {0}
         (name, age, birth_date, created_at, height, weight, description) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """
@@ -98,11 +98,11 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         ]
         
         for data in test_data:
-            self.cur.execute(insert_sql, data)
+            self.cur.execute(insert_sql.format(self.table_name), data)
         
         self.con.commit()
         
-        self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+        self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
         result = self.cur.fetchone()
         self.assertEqual(result[0], 5, "5 rows of data should be inserted")
         
@@ -111,9 +111,9 @@ class CUBRIDdb_crud_test(unittest.TestCase):
     def test_03_select_data(self):
         print("\n=== Test : Select Data ===")
         
-        self.cur.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        create_sql = f"""
-        CREATE TABLE {self.table_name} (
+        self.cur.execute('DROP TABLE IF EXISTS {0}'.format(self.table_name))
+        create_sql = """
+        CREATE TABLE {0} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             age INT,
@@ -124,10 +124,10 @@ class CUBRIDdb_crud_test(unittest.TestCase):
             description VARCHAR(500)
         )
         """
-        self.cur.execute(create_sql)
+        self.cur.execute(create_sql.format(self.table_name))
         
-        insert_sql = f"""
-        INSERT INTO {self.table_name} 
+        insert_sql = """
+        INSERT INTO {0}
         (name, age, birth_date, created_at, height, weight, description) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """
@@ -139,33 +139,33 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         ]
         
         for data in test_data:
-            self.cur.execute(insert_sql, data)
+            self.cur.execute(insert_sql.format(self.table_name), data)
         
         self.con.commit()
         
-        self.cur.execute(f"SELECT * FROM {self.table_name} ORDER BY id")
+        self.cur.execute("SELECT * FROM {0} ORDER BY id".format(self.table_name))
         all_rows = self.cur.fetchall()
         self.assertEqual(len(all_rows), 3, "3 rows of data should be selected")
         
-        self.cur.execute(f"SELECT name, age FROM {self.table_name} WHERE age > 25 ORDER BY age")
+        self.cur.execute("SELECT name, age FROM {0} WHERE age > 25 ORDER BY age".format(self.table_name))
         filtered_rows = self.cur.fetchall()
         self.assertEqual(len(filtered_rows), 2, "age over 25 user should be 2")
         
-        self.cur.execute(f"SELECT AVG(age), MAX(height), MIN(weight) FROM {self.table_name}")
+        self.cur.execute("SELECT AVG(age), MAX(height), MIN(weight) FROM {0}".format(self.table_name))
         agg_result = self.cur.fetchone()
         self.assertIsNotNone(agg_result, "Aggregate result should be present")
         
         print("✓ Data selection successful")
-        print(f"  - Total data: {len(all_rows)}")
-        print(f"  - Age over 25: {len(filtered_rows)}")
-        print(f"  - Average age: {agg_result[0]:.1f}")
+        print("  - Total data: {0}".format(len(all_rows)))
+        print("  - Age over 25: {0}".format(len(filtered_rows)))
+        print("  - Average age: {0:.1f}".format(agg_result[0]))
 
     def test_04_update_data(self):
         print("\n=== Test : Update Data ===")
         
-        self.cur.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        create_sql = f"""
-        CREATE TABLE {self.table_name} (
+        self.cur.execute('DROP TABLE IF EXISTS {0}'.format(self.table_name))
+        create_sql = """
+        CREATE TABLE {0} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             age INT,
@@ -176,10 +176,10 @@ class CUBRIDdb_crud_test(unittest.TestCase):
             description VARCHAR(500)
         )
         """
-        self.cur.execute(create_sql)
+        self.cur.execute(create_sql.format(self.table_name))
         
-        insert_sql = f"""
-        INSERT INTO {self.table_name} 
+        insert_sql = """
+        INSERT INTO {0}
         (name, age, birth_date, created_at, height, weight, description) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """
@@ -190,38 +190,38 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         ]
         
         for data in test_data:
-            self.cur.execute(insert_sql, data)
+            self.cur.execute(insert_sql.format(self.table_name), data)
         
         self.con.commit()
         
-        self.cur.execute(f"SELECT name, age, height FROM {self.table_name} WHERE name = '홍길동'")
+        self.cur.execute("SELECT name, age, height FROM {0} WHERE name = '홍길동'".format(self.table_name))
         before_update = self.cur.fetchone()
         self.assertEqual(before_update[1], 30, "Before update age should be 30")
         
-        update_sql = f"""
-        UPDATE {self.table_name} 
+        update_sql = """
+        UPDATE {0}
         SET age = ?, height = ?, description = ? 
         WHERE name = ?
         """
-        self.cur.execute(update_sql, (31, 176.0, '수정된 user 정보', '홍길동'))
+        self.cur.execute(update_sql.format(self.table_name), (31, 176.0, '수정된 user 정보', '홍길동'))
         self.con.commit()
         
-        self.cur.execute(f"SELECT name, age, height, description FROM {self.table_name} WHERE name = '홍길동'")
+        self.cur.execute("SELECT name, age, height, description FROM {0} WHERE name = '홍길동'".format(self.table_name))
         after_update = self.cur.fetchone()
         self.assertEqual(after_update[1], 31, "After update age should be 31")
         self.assertEqual(after_update[2], 176.0, "After update height should be 176.0")
-        self.assertEqual(after_update[3], '수정된 user 정보', "After update description should be changed")
+        self.assertEqual(after_update[3], u'수정된 user 정보', "After update description should be changed")
         
         print("✓ Data update successful")
-        print(f"  - 홍길동's age: {before_update[1]} → {after_update[1]}")
-        print(f"  - 홍길동's height: {before_update[2]} → {after_update[2]}")
+        print("  - 홍길동's age: {0} → {1}".format(before_update[1], after_update[1]))
+        print("  - 홍길동's height: {0} → {1}".format(before_update[2], after_update[2]))
 
     def test_05_delete_data(self):
         print("\n=== Test : Delete Data ===")
         
-        self.cur.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        create_sql = f"""
-        CREATE TABLE {self.table_name} (
+        self.cur.execute('DROP TABLE IF EXISTS {0}'.format(self.table_name))
+        create_sql = """
+        CREATE TABLE {0} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             age INT,
@@ -232,10 +232,10 @@ class CUBRIDdb_crud_test(unittest.TestCase):
             description VARCHAR(500)
         )
         """
-        self.cur.execute(create_sql)
+        self.cur.execute(create_sql.format(self.table_name))
         
-        insert_sql = f"""
-        INSERT INTO {self.table_name} 
+        insert_sql = """
+        INSERT INTO {0}
         (name, age, birth_date, created_at, height, weight, description) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """
@@ -247,36 +247,36 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         ]
         
         for data in test_data:
-            self.cur.execute(insert_sql, data)
+            self.cur.execute(insert_sql.format(self.table_name), data)
         
         self.con.commit()
         
-        self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+        self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
         before_delete = self.cur.fetchone()[0]
         self.assertEqual(before_delete, 3, "Before delete 3 rows of data should be present")
         
-        delete_sql = f"DELETE FROM {self.table_name} WHERE age < 27"
+        delete_sql = "DELETE FROM {0} WHERE age < 27".format(self.table_name)
         self.cur.execute(delete_sql)
         self.con.commit()
-        
-        self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+
+        self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
         after_delete = self.cur.fetchone()[0]
         self.assertEqual(after_delete, 2, "After delete 2 rows of data should be present")
         
-        self.cur.execute(f"SELECT name FROM {self.table_name} WHERE age < 27")
+        self.cur.execute("SELECT name FROM {0} WHERE age < 27".format(self.table_name))
         deleted_data = self.cur.fetchall()
         self.assertEqual(len(deleted_data), 0, "All data under 27 years old should be deleted")
         
         print("✓ Data deletion successful")
-        print(f"  - Before delete: {before_delete} rows")
-        print(f"  - After delete: {after_delete} rows")
+        print("  - Before delete: {0} rows".format(before_delete))
+        print("  - After delete: {0} rows".format(after_delete))
 
     def test_06_drop_table(self):
         print("\n=== Test : Drop Table ===")
         
-        self.cur.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        create_sql = f"""
-        CREATE TABLE {self.table_name} (
+        self.cur.execute('DROP TABLE IF EXISTS {0}'.format(self.table_name))
+        create_sql = """
+        CREATE TABLE {0} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             age INT,
@@ -287,29 +287,29 @@ class CUBRIDdb_crud_test(unittest.TestCase):
             description VARCHAR(500)
         )
         """
-        self.cur.execute(create_sql)
+        self.cur.execute(create_sql.format(self.table_name))
         
-        self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+        self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
         result = self.cur.fetchone()
         self.assertEqual(result[0], 0, "Table should be created")
         
-        drop_sql = f"DROP TABLE {self.table_name}"
+        drop_sql = "DROP TABLE {0}".format(self.table_name)
         self.cur.execute(drop_sql)
         self.con.commit()
         
         try:
-            self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+            self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
             self.fail("Table should be deleted")
         except Exception as e:
             print("✓ Table deletion successful")
-            print(f"  - Error message: {str(e)}")
+            print("  - Error message: {0}".format(str(e)))
 
     def test_07_complex_crud_operations(self):
         print("\n=== Test : Complex CRUD Operations ===")
         
-        self.cur.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        create_sql = f"""
-        CREATE TABLE {self.table_name} (
+        self.cur.execute('DROP TABLE IF EXISTS {0}'.format(self.table_name))
+        create_sql = """
+        CREATE TABLE {0} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             age INT,
@@ -320,10 +320,10 @@ class CUBRIDdb_crud_test(unittest.TestCase):
             description VARCHAR(500)
         )
         """
-        self.cur.execute(create_sql)
+        self.cur.execute(create_sql.format(self.table_name))
         
-        insert_sql = f"""
-        INSERT INTO {self.table_name} 
+        insert_sql = """
+        INSERT INTO {0}
         (name, age, birth_date, created_at, height, weight, description) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """
@@ -335,38 +335,38 @@ class CUBRIDdb_crud_test(unittest.TestCase):
         ]
         
         for data in test_data:
-            self.cur.execute(insert_sql, data)
+            self.cur.execute(insert_sql.format(self.table_name), data)
         
         self.con.commit()
         
-        self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+        self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
         count = self.cur.fetchone()[0]
         self.assertEqual(count, 3, "3 rows of data should be inserted")
         
-        update_sql = f"UPDATE {self.table_name} SET age = age + 1 WHERE age < 30"
+        update_sql = "UPDATE {0} SET age = age + 1 WHERE age < 30".format(self.table_name)
         self.cur.execute(update_sql)
         self.con.commit()
         
-        self.cur.execute(f"SELECT name, age FROM {self.table_name} WHERE name IN ('김철수', '이영희') ORDER BY name")
+        self.cur.execute("SELECT name, age FROM {0} WHERE name IN ('김철수', '이영희') ORDER BY name".format(self.table_name))
         updated_rows = self.cur.fetchall()
         self.assertEqual(updated_rows[0][1], 26, "김철수's age should be 26")
         self.assertEqual(updated_rows[1][1], 29, "이영희's age should be 29")
         
-        delete_sql = f"DELETE FROM {self.table_name} WHERE age > 30"
+        delete_sql = "DELETE FROM {0} WHERE age > 30".format(self.table_name)
         self.cur.execute(delete_sql)
         self.con.commit()
         
-        self.cur.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+        self.cur.execute("SELECT COUNT(*) FROM {0}".format(self.table_name))
         final_count = self.cur.fetchone()[0]
         self.assertEqual(final_count, 2, "After delete 2 rows of data should be present")
         
-        self.cur.execute(f'drop table {self.table_name}')
+        self.cur.execute("DROP TABLE {0}".format(self.table_name))
         self.con.commit()
 
         print("✓ Complex CRUD operations successful")
-        print(f"  - Initial data: 3 rows")
-        print(f"  - Age increase under 30: 2 rows")
-        print(f"  - After delete over 30: {final_count} rows")
+        print("  - Initial data: 3 rows")
+        print("  - Age increase under 30: 2 rows")
+        print("  - After delete over 30: {0} rows".format(final_count))
 
 def suite():
     suite = unittest.TestSuite()

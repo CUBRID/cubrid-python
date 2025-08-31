@@ -92,8 +92,7 @@ def test_bind_timestamp(cubrid_db_cursor):
 
 
 def test_bind_binary(cubrid_db_cursor):
-    samples_bin = ['0100', '01010101010101', '1111111111', '1111100000010101010110111111']
-    result_bin = [b'\x01\x00', b'\x01\x01\x01\x01\x01\x01\x01', b'\x11\x11\x11\x11\x11', b'\x11\x11\x10\x00\x00\x01\x01\x01\x01\x01\x10\x11\x11\x11']
+    samples_bin = ['0100', '01010101010101', '111111111', '1111100000010101010110111111']
 
     # Function to convert a binary string to bytes
     def binary_str_to_bytes(binary_str):
@@ -107,6 +106,5 @@ def test_bind_binary(cubrid_db_cursor):
 
     samples_bytes = [binary_str_to_bytes(b) for b in samples_bin]
 
-    inserted = _test_binding(cubrid_db_cursor[0], 'xbit BIT VARYING(256)', samples_bin)
-    #samples_bytes = [bytes(int(b, 2)) for b in samples_bin]
-    assert inserted == result_bin
+    inserted = _test_binding(cubrid_db_cursor[0], 'xbit BIT VARYING(256)', samples_bytes)
+    assert inserted == samples_bytes

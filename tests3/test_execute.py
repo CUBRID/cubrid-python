@@ -114,6 +114,15 @@ def test_select_from_empty_table(cubrid_db_cursor, exc_issue_table):
         cur.execute(f"select from {exc_issue_table}")
 
 
+def test_select_wrong_param_count(cubrid_db_cursor, exc_issue_table):
+    cur, _ = cubrid_db_cursor
+    with pytest.raises(CUBRIDdb.InterfaceError, match = r'-20009'):
+        cur.execute(f"insert into {exc_issue_table} values()",(1,58,'aaaa'))
+
+    with pytest.raises(CUBRIDdb.IntegrityError, match = r'-494'):
+        cur.execute(f"insert into {exc_issue_table}(nameid,age) values(?,?,?)",(1,58))
+
+
 def test_select_wrong_param_value(cubrid_db_cursor, exc_issue_table):
     cur, _ = cubrid_db_cursor
 
