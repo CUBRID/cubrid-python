@@ -25,6 +25,8 @@ Project URL
 -----------
   * Project Home: https://github.com/CUBRID/cubrid-python
   * Latest CUBRID Python Driver: http://ftp.cubrid.org/CUBRID_Drivers/Python_Driver/
+  (3.6, 3.10, 3.11, and 3.12 are distributed as wheel files, 
+  while other versions must be built directly from tar.gz files.)
 
 Dependencies for CUBRIDdb
 -------------------------
@@ -34,7 +36,7 @@ Dependencies for CUBRIDdb
             Linux (64bit)
             Other Unix and Unix-like os
   * Python: Python 2.6+
-            Python 3.0 ~ Python 3.6
+            Python 3.0 ~ Python 3.12
   * Compiler: to build from Source
             Visual Studio 2017 (For Windows)
             GNU Developer Toolset 8 or higher (For Linux)
