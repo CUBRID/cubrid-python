@@ -4,6 +4,7 @@ ARG="$*"
 SHELL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMP_DIR="$SHELL_DIR/temp_release"
 TEMP_PYTHON_DIR="$TEMP_DIR/cubrid-python"
+RELEASE_FOLDER="$SHELL_DIR/release"
 GIT_PATH="$(which git)"
 FIRST_VERSION_FILE="$TEMP_PYTHON_DIR/VERSION"
 SECOND_VERSION_FILE="$SHELL_DIR/VERSION"
@@ -22,6 +23,8 @@ PIP_PATH[2]=$(which pip3.11)
 PIP_PATH[3]=$(which pip3.12)
 
 PYTHON_COUNT=0
+
+TESTCASE_RESULT_FILE="$TEMP_DIR/linux_test_python_result.log"
 
 # Main function
 main() {
@@ -69,16 +72,18 @@ main() {
         exit 1
     fi
 
-    echo "Check Version"
     check_version
-    echo "Build"
     build
-    echo "Uninstall Driver"
+    copy_to_release_folder
+    extract_zip_and_targz
     uninstall_driver
-    echo "Install Driver"
     install_driver
-    echo "Run Testcase"
     run_testcase
+    run_testcase_3
+    if [ -f "$TESTCASE_RESULT_FILE" ]; then
+        echo "Testcase Result: $TESTCASE_RESULT_FILE"
+        cat "$TESTCASE_RESULT_FILE"
+    fi
     exit 0
 }
 
@@ -124,6 +129,37 @@ build() {
     echo "Driver Build End"
 }
 
+# Copy to release folder function
+copy_to_release_folder() {
+    echo "Copy to Release Folder"
+    cd "$TEMP_DIR/cubrid-python/dist"
+
+    if [ -d "$RELEASE_FOLDER" ]; then
+        rm -rf "$RELEASE_FOLDER"
+    fi
+
+    mkdir -p "$RELEASE_FOLDER"
+    cp *.whl "$RELEASE_FOLDER"
+}
+
+extract_zip_and_targz() {
+    echo "Extract Targz"
+    cd "$TEMP_DIR"
+    tar zcvf "$RELEASE_FOLDER/cubrid-python-${VERSION}.tar.gz" \
+     --exclude='.git' --exclude='.gitignore' --exclude='.gitmodules' \
+     --exclude='build' --exclude='dist' --exclude='*.egg-info' \
+     --exclude='cci-src/build_x86_64_release' \
+     cubrid-python
+
+    echo "Extract zip"
+    cd "$TEMP_DIR"
+    zip -r "$RELEASE_FOLDER/cubrid-python-${VERSION}.zip" cubrid-python \
+     -x "*.git*" "*.gitignore" "*.gitmodules" \
+     "*/build/*" "*/dist/*" "*.egg-info*" \
+     "*/cci-src/build_x86_64_release/*"
+}
+
+
 # Uninstall driver function
 uninstall_driver() {
     echo "Driver Uninstall"
@@ -162,18 +198,30 @@ run_testcase() {
     cd "$TEMP_DIR/cubrid-python/tests"
     
     while [ $PYTHON_COUNT -lt $PYTHON_EXECUTE_END ]; do
-        echo "RUN ${PYTHON_PATH[$PYTHON_COUNT]}" >> test_python.log
+        echo "RUN ${PYTHON_PATH[$PYTHON_COUNT]}" >> "$TESTCASE_RESULT_FILE"
         "${PYTHON_PATH[$PYTHON_COUNT]}" test_cubrid.py
-        cat test_cubrid.result >> test_python.log
+        cat test_cubrid.result >> "$TESTCASE_RESULT_FILE"
         "${PYTHON_PATH[$PYTHON_COUNT]}" test_CUBRIDdb.py
-        cat test_CUBRIDdb.result >> test_python.log
+        cat test_CUBRIDdb.result >> "$TESTCASE_RESULT_FILE"
         "${PYTHON_PATH[$PYTHON_COUNT]}" test_CUBRIDdb_crud.py
-        cat test_CUBRIDdb_crud.result >> test_python.log
+        cat test_CUBRIDdb_crud.result >> "$TESTCASE_RESULT_FILE"
         PYTHON_COUNT=$((PYTHON_COUNT + 1))
     done
     
     PYTHON_COUNT=0
-    cat test_python.log
+}
+
+run_testcase_3() {
+    echo "Run Testcase 3"
+    cd "$TEMP_DIR/cubrid-python/tests3"
+
+    while [ $PYTHON_COUNT -lt $PYTHON_EXECUTE_END ]; do
+        echo "RUN ${PYTHON_PATH[$PYTHON_COUNT]}" >> "$TESTCASE_RESULT_FILE"
+        "${PYTHON_PATH[$PYTHON_COUNT]}" -m pytest >> "$TESTCASE_RESULT_FILE"
+        PYTHON_COUNT=$((PYTHON_COUNT + 1))
+    done
+
+    PYTHON_COUNT=0
 }
 
 # Show usage function

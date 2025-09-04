@@ -7,7 +7,7 @@ set SHELL_DIR=%~dp0
 set SHELL_DIR=%SHELL_DIR:"=%
 set TEMP_DIR=%SHELL_DIR%\temp_release
 set TEMP_PYTHON_DIR=%TEMP_DIR%\cubrid-python
-set RELEASE_FOLDER=%SHELL_DIR%\windows_release
+set RELEASE_FOLDER=%SHELL_DIR%\release
 set GIT_PATH=C:\Program Files\Git\bin\git.exe
 set FIRST_VERSION_FILE=%TEMP_PYTHON_DIR%\VERSION
 set SECOND_VERSION_FILE=%SHELL_DIR%\..\VERSION
@@ -60,10 +60,10 @@ call :check_version
 call :build_env
 call :build
 call :copy_to_release_folder
-@REM call :uninstall_driver
-@REM call :install_driver
-@REM call :run_testcase
-@REM call :run_testcase_3
+call :uninstall_driver
+call :install_driver
+call :run_testcase
+call :run_testcase_3
 exit /b 0
 
 :check_version
