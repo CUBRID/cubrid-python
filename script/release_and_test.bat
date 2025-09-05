@@ -7,9 +7,10 @@ set SHELL_DIR=%~dp0
 set SHELL_DIR=%SHELL_DIR:"=%
 set TEMP_DIR=%SHELL_DIR%\temp_release
 set TEMP_PYTHON_DIR=%TEMP_DIR%\cubrid-python
+set RELEASE_FOLDER=%SHELL_DIR%\release
 set GIT_PATH=C:\Program Files\Git\bin\git.exe
 set FIRST_VERSION_FILE=%TEMP_PYTHON_DIR%\VERSION
-set SECOND_VERSION_FILE=%SHELL_DIR%\VERSION
+set SECOND_VERSION_FILE=%SHELL_DIR%\..\VERSION
 set GIT_SOURCE=https://github.com/CUBRID/cubrid-python.git
 set MAJOR_START_DATE=2017-06-27
 
@@ -19,6 +20,8 @@ set PYTHON_EXECUTE[1]=C:\python\python310
 set PYTHON_EXECUTE[2]=C:\python\python311
 set PYTHON_EXECUTE[3]=C:\python\python312
 set /a PYTHON_COUNT=0
+
+set TESTCASE_RESULT_FILE=%TEMP_DIR%\windows_test_python_result.log
 
 :main
 echo %TEMP_PYTHON_DIR%
@@ -46,7 +49,6 @@ cd /d "%TEMP_DIR%"
 echo "source download"
 "%GIT_PATH%" clone %GIT_SOURCE% --recursive
 
-echo "Handle commit ID if provided"
 if not "%ARG%"=="" (
     echo [CHECK] input commit id: %ARG%
     cd /D "%TEMP_PYTHON_DIR%"
@@ -57,9 +59,11 @@ if not "%ARG%"=="" (
 call :check_version
 call :build_env
 call :build
-@REM call :uninstall_driver
-@REM call :install_driver
-@REM call :run_testcase
+call :copy_to_release_folder
+call :uninstall_driver
+call :install_driver
+call :run_testcase
+call :run_testcase_3
 exit /b 0
 
 :check_version
@@ -107,6 +111,16 @@ set /a PYTHON_COUNT=0
 echo "Driver Build End"
 exit /b 0
 
+:copy_to_release_folder
+echo "Copy to Release Folder"
+cd "%TEMP_DIR%\cubrid-python\dist"
+if exist "%RELEASE_FOLDER%" (
+    rmdir /s /q "%RELEASE_FOLDER%"
+)
+mkdir "%RELEASE_FOLDER%"
+copy "*.whl" "%RELEASE_FOLDER%"
+exit /b 0
+
 :uninstall_driver
 rem Driver Uninstall
 echo "Driver Uninstall"
@@ -137,18 +151,31 @@ exit /b 0
 echo "Run Testcase"
 cd /d "%TEMP_DIR%\cubrid-python\tests"
 if %PYTHON_COUNT% lss %PYTHON_EXECUTE_END% (
-    echo "RUN !PYTHON_EXECUTE[%PYTHON_COUNT%]!\python.exe" >> test_python.log
+    echo "RUN !PYTHON_EXECUTE[%PYTHON_COUNT%]!\python.exe" >> %TESTCASE_RESULT_FILE%
     call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\python.exe" test_cubrid.py
-    call type test_cubrid.result >> test_python.log
+    call type test_cubrid.result >> %TESTCASE_RESULT_FILE%
     call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\python.exe" test_CUBRIDdb.py
-    call type test_CUBRIDdb.result >> test_python.log
+    call type test_CUBRIDdb.result >> %TESTCASE_RESULT_FILE%
     call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\python.exe" test_CUBRIDdb_crud.py
-    call type test_CUBRIDdb_crud.result >> test_python.log
+    call type test_CUBRIDdb_crud.result >> %TESTCASE_RESULT_FILE%
     set /a PYTHON_COUNT+=1
     goto run_testcase
 )
 set /a PYTHON_COUNT=0
-call type test_python.log
+echo "Run Testcase End result: %TESTCASE_RESULT_FILE%"
+exit /b 0
+
+:run_testcase_3
+echo "Run Testcase 3"
+cd /d "%TEMP_DIR%\cubrid-python\tests3"
+if %PYTHON_COUNT% lss %PYTHON_EXECUTE_END% (
+    echo "RUN !PYTHON_EXECUTE[%PYTHON_COUNT%]!\python.exe" >> %TESTCASE_RESULT_FILE%
+    call "%%PYTHON_EXECUTE[%PYTHON_COUNT%]%%\python.exe" -m pytest >> %TESTCASE_RESULT_FILE%
+    set /a PYTHON_COUNT+=1
+    goto run_testcase_3
+)
+set /a PYTHON_COUNT=0
+echo "Run Testcase3 End result: %TESTCASE_RESULT_FILE%"
 exit /b 0
 
 :show_usage

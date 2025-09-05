@@ -8,7 +8,8 @@ tests/python3_result/
 tests2/tests2.result
 CUBRID_Python.egg-info/
 dist/
-temp_release/
+script/temp_release/
+script/release/
 tests/*.result
 cubrid_ext/version.h
 tests3/__pycache__/
