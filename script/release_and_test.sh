@@ -76,10 +76,10 @@ main() {
     build
     copy_to_release_folder
     extract_zip_and_targz
-    # uninstall_driver
-    # install_driver
-    # run_testcase
-    # run_testcase_3
+    uninstall_driver
+    install_driver
+    run_testcase
+    run_testcase_3
     if [ -f "$TESTCASE_RESULT_FILE" ]; then
         echo "Testcase Result: $TESTCASE_RESULT_FILE"
         cat "$TESTCASE_RESULT_FILE"
@@ -143,13 +143,20 @@ copy_to_release_folder() {
 }
 
 extract_zip_and_targz() {
-    echo "Extract Zip and Targz"
-    cd "$SHELL_DIR"
-    tar zcvf cubrid-python-${VERSION}.tar.gz \
+    echo "Extract Targz"
+    cd "$TEMP_DIR"
+    tar zcvf "$RELEASE_FOLDER/cubrid-python-${VERSION}.tar.gz" \
      --exclude='.git' --exclude='.gitignore' --exclude='.gitmodules' \
      --exclude='build' --exclude='dist' --exclude='*.egg-info' \
-     --exclude='cci-src/build_x86_64_release' \aaa
-     $TEMP_PYTHON_DIR
+     --exclude='cci-src/build_x86_64_release' \
+     cubrid-python
+
+    echo "Extract zip"
+    cd "$TEMP_DIR"
+    zip -r "$RELEASE_FOLDER/cubrid-python-${VERSION}.zip" cubrid-python \
+     -x "*.git*" "*.gitignore" "*.gitmodules" \
+     "*/build/*" "*/dist/*" "*.egg-info*" \
+     "*/cci-src/build_x86_64_release/*"
 }
 
 
@@ -163,7 +170,6 @@ uninstall_driver() {
         "${PIP_PATH[$PYTHON_COUNT]}" uninstall CUBRID-Python -y
         PYTHON_COUNT=$((PYTHON_COUNT + 1))
     done
-    hghh
     PYTHON_COUNT=0
 }
 
