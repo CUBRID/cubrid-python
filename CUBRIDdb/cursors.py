@@ -1,4 +1,5 @@
 import sys
+import CUBRIDdb
 from CUBRIDdb import FIELD_TYPE
 from CUBRIDdb import InterfaceError
 from datetime import date, time, datetime
@@ -195,6 +196,8 @@ class BaseCursor(object):
                 self._cs.bind_param(i, arg)
             elif isinstance(arg, bytes):
                 self._cs.bind_param(i, arg, FIELD_TYPE.VARBIT)
+            elif isinstance(arg, CUBRIDdb.Vector):
+                self._cs.bind_param(i, arg.values, FIELD_TYPE.VECTOR)
             elif is_iterable(arg):
                 element_type = None
                 if set_type is not None:

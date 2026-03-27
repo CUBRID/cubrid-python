@@ -38,5 +38,6 @@ DATETIME = 22
 
 BLOB        = 23
 CLOB        = 24
+VECTOR      = 41
 
 STRING = VARCHAR
