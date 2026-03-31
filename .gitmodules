@@ -1,4 +1,4 @@
 [submodule "cci-src"]
 	path = cci-src
-	url = https://github.com/hgryoo/cubrid-cci.git
-	branch = cubvec/m1-nv
+	url = https://github.com/cubrid/cubrid-cci.git
+	branch = cubvec/m1
