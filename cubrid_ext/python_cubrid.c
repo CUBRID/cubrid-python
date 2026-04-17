@@ -1079,6 +1079,59 @@ _cubrid_ConnectionObject_batch_execute (_cubrid_ConnectionObject * self,
   return p_batch_result;
 }
 
+static char _cubrid_ConnectionObject_copy_send_data__doc__[] = "copy_send_data(data)\n\
+Send binary data for a COPY FROM STDIN operation.\n\
+The data argument must be a bytes object containing the binary payload.\n";
+
+static PyObject *
+_cubrid_ConnectionObject_copy_send_data (_cubrid_ConnectionObject * self,
+					 PyObject * args)
+{
+  Py_buffer buf;
+  int res;
+  T_CCI_ERROR error;
+
+  /* y* accepts any bytes-like object (bytes, bytearray, memoryview) via the
+   * buffer protocol, without an extra copy. Caller must PyBuffer_Release. */
+  if (!PyArg_ParseTuple (args, "y*", &buf))
+    {
+      return NULL;
+    }
+
+  res = cci_copy_send_data (self->handle, (const char *) buf.buf, (int) buf.len, &error);
+  PyBuffer_Release (&buf);
+  if (res < 0)
+    {
+      return handle_error (res, &error);
+    }
+
+  Py_RETURN_NONE;
+}
+
+static char _cubrid_ConnectionObject_copy_end__doc__[] = "copy_end()\n\
+Signal the end of a COPY FROM STDIN operation.\n\
+Returns the number of rows loaded.\n";
+
+static PyObject *
+_cubrid_ConnectionObject_copy_end (_cubrid_ConnectionObject * self,
+				   PyObject * args)
+{
+  int res;
+  T_CCI_ERROR error;
+
+  if (!PyArg_ParseTuple (args, ""))
+    {
+      return NULL;
+    }
+
+  res = cci_copy_end (self->handle, &error);
+  if (res < 0)
+    {
+      return handle_error (res, &error);
+    }
+
+  return _cubrid_return_PyInt_FromLong ((long) res);
+}
 
 static char _cubrid_ConnectionObject_last_insert_id__doc__[] = "insert_id()\n\
 This function returns the value with the IDs generated or the\n\
@@ -4354,6 +4407,16 @@ static PyMethodDef _cubrid_ConnectionObject_methods[] = {
    (PyCFunction) _cubrid_ConnectionObject_batch_execute,
    METH_VARARGS,
    _cubrid_ConnectionObject_batch_execute__doc__},
+  {
+   "copy_send_data",
+   (PyCFunction) _cubrid_ConnectionObject_copy_send_data,
+   METH_VARARGS,
+   _cubrid_ConnectionObject_copy_send_data__doc__},
+  {
+   "copy_end",
+   (PyCFunction) _cubrid_ConnectionObject_copy_end,
+   METH_VARARGS,
+   _cubrid_ConnectionObject_copy_end__doc__},
   {NULL, NULL}
 };
 
