@@ -1759,6 +1759,8 @@ _cubrid_CursorObject_bind_param (_cubrid_CursorObject * self, PyObject * args)
   char *str_value = NULL;
   T_CCI_DATE date_value;
   T_CCI_BIT bit_value;
+  T_CCI_VECTOR_FLOAT vector_value;
+  float *vector_buffer = NULL;
 
   if (self->state == CURSOR_STATE_CLOSED)
     {
@@ -1913,6 +1915,52 @@ _cubrid_CursorObject_bind_param (_cubrid_CursorObject * self, PyObject * args)
           bind_value = value_view.buf;
         }
     }
+  else if (u_type == CCI_U_TYPE_VECTOR && PySequence_Check(value_obj))
+    {
+      PyObject *seq = PySequence_Fast(value_obj, "vector bind expects a sequence of floats");
+      Py_ssize_t i, seq_len;
+
+      if (seq == NULL)
+        {
+          return NULL;
+        }
+
+      seq_len = PySequence_Fast_GET_SIZE(seq);
+      if (seq_len < 0)
+        {
+          Py_DECREF(seq);
+          return NULL;
+        }
+
+      vector_buffer = (float *) malloc(sizeof(float) * (size_t) seq_len);
+      if (vector_buffer == NULL)
+        {
+          Py_DECREF(seq);
+          PyErr_NoMemory();
+          return NULL;
+        }
+
+      for (i = 0; i < seq_len; i++)
+        {
+          PyObject *item = PySequence_Fast_GET_ITEM(seq, i);
+          double item_value = PyFloat_AsDouble(item);
+          if (PyErr_Occurred())
+            {
+              free(vector_buffer);
+              vector_buffer = NULL;
+              Py_DECREF(seq);
+              return NULL;
+            }
+          vector_buffer[i] = (float) item_value;
+        }
+
+      Py_DECREF(seq);
+
+      vector_value.dim = (int) seq_len;
+      vector_value.float_array = vector_buffer;
+      bind_value = &vector_value;
+      a_type = CCI_A_TYPE_VECTOR;
+    }
   else
     {
       return NULL;
@@ -1930,6 +1978,11 @@ _cubrid_CursorObject_bind_param (_cubrid_CursorObject * self, PyObject * args)
   if (temp_str)
     {
       Py_DECREF (temp_str);
+    }
+
+  if (vector_buffer)
+    {
+      free(vector_buffer);
     }
 
   if (res < 0)
@@ -2391,6 +2444,8 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
   T_CCI_DATE dt;
   T_CCI_BIT bit_data;
   char *str_buffer;
+  char *cursor;
+  char *endptr;
   int len;
   CUBRID_LONG_LONG int64_value;
 
@@ -2592,6 +2647,78 @@ _cubrid_CursorObject_dbval_to_pyvalue (_cubrid_CursorObject * self, int type,
 	      PyErr_SetString (PyExc_ValueError, "String decoding failed");
 	      return Py_None;
             }
+        }
+      break;
+    case CCI_U_TYPE_VECTOR:
+      res = cci_get_data (self->handle, index, CCI_A_TYPE_STR, &buffer, &ind);
+      if (res < 0)
+        {
+          return handle_error (res, NULL);
+        }
+      if (ind < 0)
+        {
+          Py_INCREF (Py_None);
+          val = Py_None;
+        }
+      else
+        {
+          PyObject *list_obj = PyList_New (0);
+          if (list_obj == NULL)
+            {
+              return NULL;
+            }
+
+          cursor = buffer;
+          while (*cursor != '\0' && *cursor != '[')
+            {
+              cursor++;
+            }
+
+          if (*cursor == '[')
+            {
+              cursor++;
+            }
+
+          while (*cursor != '\0' && *cursor != ']')
+            {
+              float fval;
+              PyObject *item;
+
+              while (*cursor == ' ' || *cursor == '\t' || *cursor == '\n' || *cursor == ',')
+                {
+                  cursor++;
+                }
+
+              if (*cursor == '\0' || *cursor == ']')
+                {
+                  break;
+                }
+
+              fval = strtof (cursor, &endptr);
+              if (endptr == cursor)
+                {
+                  Py_DECREF (list_obj);
+                  return PyErr_Format (PyExc_ValueError, "Failed to parse VECTOR value: %s", buffer);
+                }
+
+              item = PyFloat_FromDouble ((double) fval);
+              if (item == NULL)
+                {
+                  Py_DECREF (list_obj);
+                  return NULL;
+                }
+
+              if (PyList_Append (list_obj, item) < 0)
+                {
+                  Py_DECREF (item);
+                  Py_DECREF (list_obj);
+                  return NULL;
+                }
+              Py_DECREF (item);
+              cursor = endptr;
+            }
+
+          val = list_obj;
         }
       break;
     default:

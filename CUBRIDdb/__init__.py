@@ -54,7 +54,21 @@ FLOAT = DBAPISet([FIELD_TYPE.FLOAT, FIELD_TYPE.DOUBLE])
 SET = DBAPISet([FIELD_TYPE.SET, FIELD_TYPE.MULTISET, FIELD_TYPE.SEQUENCE])
 BLOB = DBAPISet([FIELD_TYPE.BLOB])
 CLOB = DBAPISet([FIELD_TYPE.CLOB])
+VECTOR = DBAPISet([FIELD_TYPE.VECTOR])
 ROWID = DBAPISet()
+
+class Vector(object):
+    def __init__(self, values):
+        self.values = tuple(values)
+
+    def __iter__(self):
+        return iter(self.values)
+
+    def __len__(self):
+        return len(self.values)
+
+    def __getitem__(self, index):
+        return self.values[index]
 
 def Connect(*args, **kwargs):
     from CUBRIDdb.connections import Connection
@@ -82,5 +96,6 @@ NotSupportedError = NotSupportedError
 __all__ = [ 'Connect', 'connection', 'connect', 'connections', 'DatabaseError', 
     'Error', 'InterfaceError', 'NotSupportedError', 'apilevel', 'Cursor', 
     'DictCursor', 'paramstyle', 'threadsafety', 'STRING', 'BINARY', 'NUMBER',
-    'DATE', 'TIME', 'TIMESTAMP', 'DATETIME', 'FLOAT', 'ROWID', 'SET', 'BLOB', 'CLOB'] 
+    'DATE', 'TIME', 'TIMESTAMP', 'DATETIME', 'FLOAT', 'VECTOR', 'ROWID', 'SET', 'BLOB', 'CLOB',
+    'VECTOR'] 
     
