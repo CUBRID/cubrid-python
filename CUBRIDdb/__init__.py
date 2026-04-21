@@ -97,5 +97,5 @@ __all__ = [ 'Connect', 'connection', 'connect', 'connections', 'DatabaseError',
     'Error', 'InterfaceError', 'NotSupportedError', 'apilevel', 'Cursor', 
     'DictCursor', 'paramstyle', 'threadsafety', 'STRING', 'BINARY', 'NUMBER',
     'DATE', 'TIME', 'TIMESTAMP', 'DATETIME', 'FLOAT', 'VECTOR', 'ROWID', 'SET', 'BLOB', 'CLOB',
-    'Vector'] 
+    'VECTOR'] 
     
