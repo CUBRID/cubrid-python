@@ -1,5 +1,5 @@
 [submodule "cci-src"]
 	path = cci-src
 	url = https://github.com/CUBRID/cubrid-cci.git
-	branch = cubvec/m1-nv
+	branch = cubvec/m1
 
