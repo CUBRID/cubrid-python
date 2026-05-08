@@ -7,6 +7,7 @@ override Connection.default_cursor with a non-standard Cursor class.
 """
 from _cubrid import connect as cubrid_connect
 from CUBRIDdb.cursors import *
+from CUBRIDdb.copy import CopyWriter, DEFAULT_BUFFER_SIZE
 
 
 class Connection(object):
@@ -119,4 +120,18 @@ class Connection(object):
         Executes more than one sql statement at the same time.
         """
         return self.connection.batch_execute(sql)
+
+    def copy(self, stmt, types=None, buffer_size=DEFAULT_BUFFER_SIZE):
+        """
+        Start a buffered COPY FROM STDIN (FORMAT BINARY) session.
+
+        Returns a CopyWriter that auto-chunks writes to `buffer_size` bytes
+        per network flush. Use as a context manager or call close() yourself.
+
+        If `types` is given (list of CUBRID column type names in column order),
+        you can call writer.write_row((v1, v2, ...)) with Python values and the
+        driver encodes to the binary wire format. Otherwise, use writer.write()
+        with pre-encoded bytes.
+        """
+        return CopyWriter(self, stmt, types=types, buffer_size=buffer_size)
 
