@@ -55,10 +55,15 @@ def _enc_varchar(v):
 
 
 def _enc_vector(v):
-    # v is a sequence of floats
+    # v is a sequence of floats.
+    # Field length and dim stay network/big-endian (server reads them via
+    # ntohl), but the float body must be LITTLE-endian: the server-side COPY
+    # binary decoder memcpy's the vector body straight into the DB_VALUE on
+    # little-endian hosts (copy_binary_decoder.cpp, "little-endian optimized").
+    # Sending big-endian floats here byte-swaps every element -> corrupt vectors.
     body = struct.pack("!i", len(v))
     for x in v:
-        body += struct.pack("!f", float(x))
+        body += struct.pack("<f", float(x))
     return struct.pack("!i", len(body)) + body
 
 
