@@ -20,5 +20,5 @@ elif [ "$1" = 'clean' ];then
   mkdir -p build_x86_64_release
   exit 0
 else
-  bash build.sh
+  sh build.sh
 fi
